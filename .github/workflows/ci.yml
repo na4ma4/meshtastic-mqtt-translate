@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Check out code
@@ -41,6 +43,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Check out code
