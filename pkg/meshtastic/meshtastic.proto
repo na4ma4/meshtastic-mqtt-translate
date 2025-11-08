@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package meshtastic;
+
+option go_package = "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic";
+
+// The on-air packets for Meshtastic
+message MeshPacket {
+  // The node ID of the sender
+  fixed32 from = 1;
+
+  // The node ID of the destination
+  fixed32 to = 2;
+
+  // The channel this packet was sent on
+  uint32 channel = 3;
+
+  // A unique ID for this packet. Always 0 for no-ack packets or non broadcast packets (and therefore
+  // not useful). Only useful in ACK packets to allow the sender to identify the packet that was ACK'd.
+  fixed32 id = 6;
+
+  // The time this message was received by the relay (if any)
+  fixed32 rx_time = 7;
+
+  // The time this message was received by the local node (if any)
+  float rx_snr = 8;
+
+  // Received RSSI
+  int32 rx_rssi = 9;
+
+  // The number of hops remaining
+  uint32 hop_limit = 10;
+
+  // If this is true, we want the recipient to ack this message
+  bool want_ack = 11;
+
+  // This packet was received via MQTT
+  bool via_mqtt = 13;
+
+  // The original hop limit
+  uint32 hop_start = 14;
+
+  // This packet's public key
+  bytes public_key = 15;
+
+  // This packet is encrypted with PKI
+  bool pki_encrypted = 16;
+
+  oneof payload_variant {
+    // The encrypted packet
+    bytes encrypted = 4;
+
+    // The decrypted packet (only available after decryption)
+    Data decoded = 5;
+  }
+}
+
+// The payload portion of a packet, this is the actual message payload.
+message Data {
+  // The type of payload
+  PortNum portnum = 1;
+
+  // The payload bytes
+  bytes payload = 2;
+
+  // If true, the recipient should respond
+  bool want_response = 3;
+
+  // The destination node
+  fixed32 dest = 4;
+
+  // The source node
+  fixed32 source = 5;
+
+  // A unique ID for this packet
+  fixed32 request_id = 6;
+
+  // The ID of the message this is replying to
+  fixed32 reply_id = 7;
+
+  // An optional emoji to send with the message
+  fixed32 emoji = 8;
+}
+
+// The payload types
+enum PortNum {
+  UNKNOWN_APP = 0;
+  TEXT_MESSAGE_APP = 1;
+  REMOTE_HARDWARE_APP = 2;
+  POSITION_APP = 3;
+  NODEINFO_APP = 4;
+  ROUTING_APP = 5;
+  ADMIN_APP = 6;
+  TEXT_MESSAGE_COMPRESSED_APP = 7;
+  WAYPOINT_APP = 8;
+  AUDIO_APP = 9;
+  DETECTION_SENSOR_APP = 10;
+  REPLY_APP = 32;
+  IP_TUNNEL_APP = 33;
+  PAXCOUNTER_APP = 34;
+  SERIAL_APP = 64;
+  STORE_FORWARD_APP = 65;
+  RANGE_TEST_APP = 66;
+  TELEMETRY_APP = 67;
+  ZPS_APP = 68;
+  SIMULATOR_APP = 69;
+  TRACEROUTE_APP = 70;
+  NEIGHBORINFO_APP = 71;
+  ATAK_PLUGIN = 72;
+  MAP_REPORT_APP = 73;
+  PRIVATE_APP = 256;
+  ATAK_FORWARDER = 257;
+  MAX = 511;
+}
+
+// The service envelope wraps the packet with additional metadata
+message ServiceEnvelope {
+  // The actual packet being sent
+  MeshPacket packet = 1;
+
+  // The channel ID
+  string channel_id = 2;
+
+  // The gateway ID
+  string gateway_id = 3;
+}
