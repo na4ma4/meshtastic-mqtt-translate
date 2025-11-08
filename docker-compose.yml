@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  meshtastic-relay:
+    build: .
+    container_name: meshtastic-mqtt-relay
+    restart: unless-stopped
+    command:
+      - -source-broker=tcp://mqtt.meshtastic.org:1883
+      - -source-topic=msh/US/2/json/#
+      - -dest-broker=tcp://mosquitto:1883
+      - -dest-topic=meshtastic/json
+    depends_on:
+      - mosquitto
+    networks:
+      - mqtt-network
+
+  # Example destination MQTT broker
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      - mqtt-network
+    restart: unless-stopped
+
+volumes:
+  mosquitto-data:
+  mosquitto-logs:
+
+networks:
+  mqtt-network:
+    driver: bridge

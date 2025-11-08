@@ -18,6 +18,7 @@ A Golang application that connects to an MQTT broker to receive Meshtastic messa
 
 - Go 1.21 or later
 - Protocol Buffers compiler (protoc) - only needed for development
+- Docker (optional, for containerized deployment)
 
 ### Build from source
 
@@ -31,6 +32,29 @@ Or manually:
 
 ```bash
 go build -o meshtastic-mqtt-relay ./cmd/meshtastic-mqtt-relay
+```
+
+### Docker
+
+Build the Docker image:
+
+```bash
+docker build -t meshtastic-mqtt-relay .
+```
+
+Run with Docker:
+
+```bash
+docker run --rm meshtastic-mqtt-relay \
+  -source-broker tcp://mqtt.meshtastic.org:1883 \
+  -source-topic "msh/US/2/json/#" \
+  -dest-broker tcp://your-broker:1883
+```
+
+Or use docker-compose:
+
+```bash
+docker-compose up -d
 ```
 
 ## Usage
