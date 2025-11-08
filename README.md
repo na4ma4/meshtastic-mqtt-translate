@@ -57,9 +57,31 @@ Or use docker-compose:
 docker-compose up -d
 ```
 
+### System Service (Linux)
+
+For production deployments on Linux, you can install as a systemd service:
+
+```bash
+# Build and install the binary
+sudo make install
+
+# Copy and edit the service file
+sudo cp meshtastic-mqtt-relay.service /etc/systemd/system/
+sudo nano /etc/systemd/system/meshtastic-mqtt-relay.service
+
+# Enable and start the service
+sudo systemctl enable meshtastic-mqtt-relay
+sudo systemctl start meshtastic-mqtt-relay
+
+# Check status
+sudo systemctl status meshtastic-mqtt-relay
+```
+
 ## Usage
 
 ### Command-line Options
+
+All configuration is done via command-line flags. See [config.example](config.example) for detailed documentation of all options.
 
 ```
 Usage of meshtastic-mqtt-relay:
