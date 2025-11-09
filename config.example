@@ -1,0 +1,79 @@
+# Example configuration for meshtastic-mqtt-relay
+# This is a documentation file showing all available options.
+# The application uses command-line flags, not a config file.
+# Use this as a reference for creating your run command or systemd service.
+
+# Source MQTT Broker Configuration
+# -source-broker: URL of the MQTT broker to receive binary messages from
+#   Examples:
+#     tcp://mqtt.meshtastic.org:1883 (Meshtastic public MQTT)
+#     tcp://localhost:1883 (Local broker)
+#     tls://mqtt.example.com:8883 (TLS encrypted)
+#     ssl://mqtt.example.com:8883 (SSL encrypted)
+#   Default: tcp://localhost:1883
+
+# -source-client-id: Client ID for source connection
+#   Must be unique across all clients connected to the same broker
+#   Default: meshtastic-relay-source
+
+# -source-topic: MQTT topic pattern to subscribe to
+#   Use MQTT wildcards: + (single level), # (multi-level)
+#   Examples:
+#     msh/US/2/json/# (US region 2, all channels and nodes)
+#     msh/+/+/json/+/+ (All regions and channels)
+#     msh/EU/1/json/LongFast/# (Specific channel)
+#   Default: msh/+/json/+/+
+
+# Destination MQTT Broker Configuration
+# -dest-broker: URL of the MQTT broker to publish JSON messages to
+#   Same format as source-broker
+#   Default: tcp://localhost:1884
+
+# -dest-client-id: Client ID for destination connection
+#   Must be unique and different from source-client-id if using same broker
+#   Default: meshtastic-relay-dest
+
+# -dest-topic: Topic prefix for publishing JSON messages
+#   The original source topic will be appended to this prefix
+#   Example: if dest-topic is "meshtastic/json" and source topic is "msh/US/2/json/LongFast/!12345678"
+#            the published topic will be "meshtastic/json/msh/US/2/json/LongFast/!12345678"
+#   Default: meshtastic/json
+
+# Authentication (optional)
+# -username: MQTT username for authentication
+#   Used for both source and destination brokers
+#   Default: "" (no authentication)
+
+# -password: MQTT password for authentication
+#   Used for both source and destination brokers
+#   Default: "" (no authentication)
+
+# Example Commands:
+
+# Basic usage (default settings):
+# ./meshtastic-mqtt-relay
+
+# Connect to Meshtastic public MQTT and relay to local broker:
+# ./meshtastic-mqtt-relay \
+#   -source-broker tcp://mqtt.meshtastic.org:1883 \
+#   -source-topic "msh/US/2/json/#" \
+#   -dest-broker tcp://localhost:1883 \
+#   -dest-topic meshtastic/json
+
+# With authentication:
+# ./meshtastic-mqtt-relay \
+#   -source-broker tcp://mqtt.example.com:1883 \
+#   -username myuser \
+#   -password mypassword \
+#   -dest-broker tcp://localhost:1883
+
+# Using TLS:
+# ./meshtastic-mqtt-relay \
+#   -source-broker tls://mqtt.meshtastic.org:8883 \
+#   -dest-broker tls://localhost:8883
+
+# Docker usage:
+# docker run --rm meshtastic-mqtt-relay \
+#   -source-broker tcp://mqtt.meshtastic.org:1883 \
+#   -source-topic "msh/US/2/json/#" \
+#   -dest-broker tcp://host.docker.internal:1883

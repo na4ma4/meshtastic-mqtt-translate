@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+# Project binaries
+/meshtastic-mqtt-relay
+cmd/meshtastic-mqtt-relay/meshtastic-mqtt-relay
+
 # Test binary, built with `go test -c`
 *.test
 
