@@ -1,0 +1,25 @@
+{
+    "channel": 0,
+    "from": 4019308589,
+    "hop_start": 5,
+    "hops_away": 4,
+    "id": 3491274335,
+    "payload": {
+        "latitude_i": -275513344,
+        "longitude_i": 1530658816,
+        "altitude": 315,
+        "time": 1762934874,
+        "location_source": "LOC_INTERNAL",
+        "PDOP": 159,
+        "ground_speed": 0,
+        "ground_track": 27714000,
+        "sats_in_view": 8,
+        "precision_bits": 13
+    },
+    "rssi": -86,
+    "sender": "!44be043f",
+    "snr": 10.5,
+    "timestamp": 1762934875,
+    "to": 4294967295,
+    "type": "POSITION_APP"
+}
