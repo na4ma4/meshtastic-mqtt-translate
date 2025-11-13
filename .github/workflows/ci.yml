@@ -2,61 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
   pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build and Test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-
-    - name: Install dependencies
-      run: go mod download
-
-    - name: Run go vet
-      run: go vet ./...
-
-    - name: Run tests
-      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
-
-    - name: Build
-      run: go build -v ./cmd/meshtastic-mqtt-relay
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./coverage.txt
-        fail_ci_if_error: false
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m
+  unit-test:
+    name: "Unit Test"
+    uses: na4ma4/actions/.github/workflows/unit-test.yml@main
+    secrets: inherit
