@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/na4ma4/go-slogtool"
 	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/internal/mainconfig"
 	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/internal/relay"
 	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/internal/store"
@@ -56,8 +56,8 @@ func init() {
 	_ = viper.BindEnv("dry-run", "MQTT_DRY_RUN")
 
 	rootCmd.PersistentFlags().StringP("output", "o", "", "Output store directory (optional)")
-	_ = viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
-	_ = viper.BindEnv("output", "OUTPUT_DIRECTORY")
+	_ = viper.BindPFlag("store.output", rootCmd.PersistentFlags().Lookup("output"))
+	_ = viper.BindEnv("store.output", "OUTPUT_DIRECTORY")
 }
 
 func main() {
@@ -65,9 +65,6 @@ func main() {
 }
 
 func mainCmd(_ *cobra.Command, _ []string) error {
-	log.Printf("Starting Meshtastic MQTT Relay")
-	log.Printf("Source: %s (topic: %s)", viper.GetString("broker"), viper.GetString("topic"))
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -77,6 +74,12 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		logger.Debug("Debug logging enabled")
 	}
 
+	logger.InfoContext(ctx, "Starting Meshtastic MQTT Relay",
+		slog.String("broker.address", viper.GetString("broker.address")),
+		slog.String("broker.topic", viper.GetString("broker.topic")),
+		// slog.String("config.file", viper.ConfigFileUsed()),
+	)
+
 	config := relay.Config{
 		Broker:   viper.GetString("broker.address"),
 		ClientID: viper.GetString("broker.clientid"),
@@ -85,9 +88,11 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		Topic:    viper.GetString("broker.topic"),
 	}
 
-	if outputDir := viper.GetString("output"); outputDir != "" {
+	if outputDir := viper.GetString("store.output"); outputDir != "" {
 		config.Store = store.NewJSONDirStore(outputDir)
-		log.Printf("Output directory set to: %s", outputDir)
+		logger.InfoContext(ctx, "Output directory set",
+			slog.String("store.output", outputDir),
+		)
 	}
 
 	var client *relay.Relay
@@ -95,13 +100,13 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		var err error
 		client, err = relay.NewRelay(config, logger)
 		if err != nil {
-			log.Printf("Failed to create relay: %v", err)
+			logger.ErrorContext(ctx, "Failed to create relay", slogtool.ErrorAttr(err))
 			return err
 		}
 	}
 
 	if err := client.Start(ctx); err != nil {
-		log.Printf("Failed to start relay: %v", err)
+		logger.ErrorContext(ctx, "Failed to start relay", slogtool.ErrorAttr(err))
 		return err
 	}
 
@@ -110,7 +115,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
-	log.Println("Shutting down...")
+	logger.InfoContext(ctx, "Shutting down Meshtastic MQTT Relay")
 	client.Stop(ctx)
 
 	return nil

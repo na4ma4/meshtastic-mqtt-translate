@@ -20,16 +20,18 @@ func ConfigInit() {
 	viper.AddConfigPath(".")
 
 	// check if /data/optons.json or ./testdata/options.json exists.
-	if _, err := os.Stat("/data/options.json"); err == nil {
-		viper.SetConfigFile("/data/options.json")
-	}
 	if _, err := os.Stat("./testdata/options.json"); err == nil {
 		viper.SetConfigFile("./testdata/options.json")
+	}
+	if _, err := os.Stat("/data/options.json"); err == nil {
+		viper.SetConfigFile("/data/options.json")
 	}
 
 	_ = viper.BindEnv("debug", "DEBUG")
 
-	_ = configReadIn()
+	if err := configReadIn(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading config: %v\n", err)
+	}
 }
 
 func configReadIn() error {

@@ -123,7 +123,7 @@ func (r *Relay) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 		if token := r.destClient.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
 			r.Logger.Error("Failed to publish to destination", slogtool.ErrorAttr(token.Error()))
 		} else {
-			r.Logger.Info("Successfully relayed message", "topic", topic)
+			r.Logger.Info(">", slog.String("topic", topic))
 		}
 	}
 }
@@ -137,17 +137,17 @@ func (r *Relay) HandleMessagePayload(payload []byte, topic string) ([]byte, stri
 		return nil, ""
 	}
 
-	r.Logger.Info("Received message",
+	r.Logger.Debug("Received message",
 		slog.String("topic", topic),
 		slog.String("payload", base64.StdEncoding.EncodeToString(payload)),
 	)
 	if envelope.GetPacket() == nil {
-		r.Logger.Debug("<", slog.String("topic", topic))
+		r.Logger.Info("<", slog.String("topic", topic))
 	} else {
 		if dc := envelope.GetPacket().GetDecoded(); dc != nil {
-			r.Logger.Debug("<", slog.String("topic", topic), slog.String("portnum", dc.GetPortnum().String()))
+			r.Logger.Info("<", slog.String("topic", topic), slog.String("portnum", dc.GetPortnum().String()))
 		} else {
-			r.Logger.Debug("< [encrypted]", slog.String("topic", topic))
+			r.Logger.Info("< [encrypted]", slog.String("topic", topic))
 		}
 	}
 
@@ -163,7 +163,7 @@ func (r *Relay) HandleMessagePayload(payload []byte, topic string) ([]byte, stri
 	newTopic := strings.Replace(topic, "/e/", "/json/", 1)
 
 	// log.Printf(">: %s", newTopic)
-	r.Logger.Info("Relaying message",
+	r.Logger.Debug("Relaying message",
 		slog.String("topic", newTopic),
 		slog.String("payload", string(jsonData)),
 	)

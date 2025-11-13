@@ -26,9 +26,9 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=builder /build/meshtastic-mqtt-relay .
 
-# Run as non-root user
-RUN adduser -D -u 1000 appuser
-USER appuser
+# # Run as non-root user
+# RUN adduser -D -u 1000 appuser
+# USER appuser
 
 # Expose any necessary ports (none required for MQTT client)
 
