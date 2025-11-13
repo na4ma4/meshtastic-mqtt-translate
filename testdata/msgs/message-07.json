@@ -1,0 +1,37 @@
+{
+    "channel": 0,
+    "from": 1972959997,
+    "hop_start": 7,
+    "hops_away": 4,
+    "id": 121662013,
+    "payload": {
+        "towards": [
+            {
+                "route": 4083107975,
+                "snr": -128
+            },
+            {
+                "route": 2956805632,
+                "snr": -128
+            },
+            {
+                "route": 3819496324,
+                "snr": -128
+            },
+            {
+                "route": 3697797612,
+                "snr": -57
+            },
+            {
+                "route": 1153303615,
+                "snr": 43
+            }
+        ]
+    },
+    "rssi": -78,
+    "sender": "!44be043f",
+    "snr": 10.75,
+    "timestamp": 1763029898,
+    "to": 1128034900,
+    "type": "TRACEROUTE_APP"
+}

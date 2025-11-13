@@ -1,0 +1,23 @@
+{
+    "channel": 0,
+    "from": 2697708456,
+    "hop_start": 7,
+    "hops_away": 4,
+    "id": 305783161,
+    "payload": {
+        "id": "!a0cbc3a8",
+        "long_name": "Luy Paper Home",
+        "short_name": "LUY0",
+        "macaddr": "30:ED:A0:CB:C3:A8",
+        "hw_model": "HELTEC_WIRELESS_PAPER",
+        "role": "ROUTER_LATE",
+        "public_key": "1C5C/c6zVZ3i4LL+sMEmPWA8PnexeTq51qSi2w+rFRk=",
+        "is_unmessagable": true
+    },
+    "rssi": -85,
+    "sender": "!44be043f",
+    "snr": 10.0,
+    "timestamp": 1762936352,
+    "to": 4294967295,
+    "type": "NODEINFO_APP"
+}

@@ -1,0 +1,24 @@
+{
+    "channel": 0,
+    "from": 2420459478,
+    "hop_start": 6,
+    "hops_away": 5,
+    "id": 2182705180,
+    "payload": {
+        "time": 1762936217,
+        "device_metrics": {
+            "battery_level": 95,
+            "voltage": 4.127,
+            "channel_utilization": 0,
+            "air_util_tx": 0.229694441,
+            "uptime_seconds": 338755
+        }
+    },
+    "rssi": -82,
+    "sender": "!44be043f",
+    "snr": -12.25,
+    "timestamp": 1762936221,
+    "to": 4294967295,
+    "type": "TELEMETRY_APP",
+    "bitfield": 1
+}

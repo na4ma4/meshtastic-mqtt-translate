@@ -1,0 +1,15 @@
+{
+    "channel": 0,
+    "from": 1244681808,
+    "hop_start": 7,
+    "hops_away": 0,
+    "id": 3100022602,
+    "payload": "Maybe Ping",
+    "rssi": -50,
+    "sender": "!44be043f",
+    "snr": 10.75,
+    "timestamp": 1762938002,
+    "to": 4294967295,
+    "type": "TEXT_MESSAGE_APP",
+    "bitfield": 0
+}
