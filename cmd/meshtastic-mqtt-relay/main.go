@@ -32,24 +32,24 @@ func init() {
 	_ = viper.BindEnv("debug", "DEBUG")
 
 	rootCmd.PersistentFlags().StringP("broker", "b", "tcp://localhost:1883", "Source MQTT broker URL")
-	_ = viper.BindPFlag("broker", rootCmd.PersistentFlags().Lookup("broker"))
-	_ = viper.BindEnv("broker", "MQTT_BROKER")
+	_ = viper.BindPFlag("broker.address", rootCmd.PersistentFlags().Lookup("broker"))
+	_ = viper.BindEnv("broker.address", "MQTT_BROKER")
 
 	rootCmd.PersistentFlags().StringP("clientid", "c", "meshtastic-mqtt-relay", "MQTT client ID")
-	_ = viper.BindPFlag("clientid", rootCmd.PersistentFlags().Lookup("clientid"))
-	_ = viper.BindEnv("clientid", "MQTT_CLIENTID")
+	_ = viper.BindPFlag("broker.clientid", rootCmd.PersistentFlags().Lookup("clientid"))
+	_ = viper.BindEnv("broker.clientid", "MQTT_CLIENTID")
 
 	rootCmd.PersistentFlags().StringP("username", "u", "", "MQTT username (optional)")
-	_ = viper.BindPFlag("username", rootCmd.PersistentFlags().Lookup("username"))
-	_ = viper.BindEnv("username", "MQTT_USERNAME")
+	_ = viper.BindPFlag("broker.username", rootCmd.PersistentFlags().Lookup("username"))
+	_ = viper.BindEnv("broker.username", "MQTT_USERNAME")
 
 	rootCmd.PersistentFlags().StringP("password", "p", "", "MQTT password (optional)")
-	_ = viper.BindPFlag("password", rootCmd.PersistentFlags().Lookup("password"))
-	_ = viper.BindEnv("password", "MQTT_PASSWORD")
+	_ = viper.BindPFlag("broker.password", rootCmd.PersistentFlags().Lookup("password"))
+	_ = viper.BindEnv("broker.password", "MQTT_PASSWORD")
 
 	rootCmd.PersistentFlags().StringP("topic", "t", "msh/ANZ/2/e/#", "MQTT topic to subscribe to")
-	_ = viper.BindPFlag("topic", rootCmd.PersistentFlags().Lookup("topic"))
-	_ = viper.BindEnv("topic", "MQTT_TOPIC")
+	_ = viper.BindPFlag("broker.topic", rootCmd.PersistentFlags().Lookup("topic"))
+	_ = viper.BindEnv("broker.topic", "MQTT_TOPIC")
 
 	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "Dry run mode (optional)")
 	_ = viper.BindPFlag("dry-run", rootCmd.PersistentFlags().Lookup("dry-run"))
@@ -78,11 +78,11 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	}
 
 	config := relay.Config{
-		Broker:   viper.GetString("broker"),
-		ClientID: viper.GetString("clientid"),
-		Username: viper.GetString("username"),
-		Password: viper.GetString("password"),
-		Topic:    viper.GetString("topic"),
+		Broker:   viper.GetString("broker.address"),
+		ClientID: viper.GetString("broker.clientid"),
+		Username: viper.GetString("broker.username"),
+		Password: viper.GetString("broker.password"),
+		Topic:    viper.GetString("broker.topic"),
 	}
 
 	if outputDir := viper.GetString("output"); outputDir != "" {

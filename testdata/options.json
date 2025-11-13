@@ -1,0 +1,21 @@
+{
+    "broker": {
+        "address": "mqtt.meshtastic.org",
+        "clientid": "mesh-mqtt-relay",
+        "port": 1883,
+        "user": "meshdev",
+        "password": "large4cats",
+        "buftopic": "msh/US/2/e",
+        "jsontopic": "msh/US/OR/2/json"
+    },
+    "channels": [
+        {
+            "name": "LongFast",
+            "key": "AQ=="
+        },
+        {
+            "name": "ShortSecure",
+            "key": "BQ=="
+        }
+    ]
+}
