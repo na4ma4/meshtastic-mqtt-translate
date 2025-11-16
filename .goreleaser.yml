@@ -1,0 +1,65 @@
+version: 2
+
+env:
+  - CGO_ENABLED=0
+
+before:
+  hooks:
+    - mage
+    - go generate ./...
+    - go mod tidy
+    - go mod download
+
+builds:
+  - id: meshtastic-mqtt-relay
+    main: ./cmd/meshtastic-mqtt-relay
+    binary: meshtastic-mqtt-relay
+    ldflags:
+      - "-X github.com/dosquad/go-cliversion.BuildDate={{ .Date }}"
+      - "-X github.com/dosquad/go-cliversion.BuildDebug=false"
+      - "-X github.com/dosquad/go-cliversion.BuildMethod=goreleaser"
+      - "-X github.com/dosquad/go-cliversion.BuildVersion={{.Version}}"
+      - "-X github.com/dosquad/go-cliversion.GitCommit={{.ShortCommit}}"
+      - "-X github.com/dosquad/go-cliversion.GitRepo=https://github.com/na4ma4/meshtastic-mqtt-translate"
+      - "-X github.com/dosquad/go-cliversion.GitSlug=na4ma4/meshtastic-mqtt-translate"
+      - "-X github.com/dosquad/go-cliversion.GitTag={{.Version}}"
+      - "-X github.com/dosquad/go-cliversion.GitExactTag={{.RawVersion}}"
+      - "-X main.commit={{.ShortCommit}}"
+      - "-X main.date={{ .Date }}"
+      - "-X main.builtBy=goreleaser"
+      - "-X main.repo=https://github.com/na4ma4/meshtastic-mqtt-translate"
+      - "-X main.goVersion=1.22.4"
+      - "-X main.version={{.Version}}"
+      - "-s"
+      - "-w"
+    flags:
+      - -tags=release
+      - -buildmode=default
+      - -trimpath
+      - -v
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    goarm: [ '5', '7' ]
+    goos: ['linux', 'darwin']
+    goarch: ['amd64', 'arm', 'arm64']
+    ignore:
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: amd64
+
+archives:
+  - allow_different_binary_count: true
+
+checksum:
+  algorithm: sha256
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

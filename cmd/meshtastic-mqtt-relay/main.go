@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dosquad/go-cliversion"
 	"github.com/na4ma4/go-contextual"
 	"github.com/na4ma4/go-slogtool"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/health"
@@ -22,11 +23,12 @@ import (
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
-	Use:   "meshtastic-mqtt-relay",
-	Short: "Meshtastic MQTT Relay",
-	Long:  `Meshtastic MQTT Relay is a tool for converting Meshtastic messages over MQTT from protobuf to JSON.`,
-	RunE:  mainCmd,
-	Args:  cobra.NoArgs,
+	Use:     "meshtastic-mqtt-relay",
+	Short:   "Meshtastic MQTT Relay",
+	Long:    `Meshtastic MQTT Relay is a tool for converting Meshtastic messages over MQTT from protobuf to JSON.`,
+	RunE:    mainCmd,
+	Args:    cobra.NoArgs,
+	Version: cliversion.Get().VersionString(),
 }
 
 func init() {
