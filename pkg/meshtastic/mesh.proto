@@ -2,16 +2,16 @@ syntax = "proto3";
 
 package meshtastic;
 
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/channel.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/config.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/device_ui.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/module_config.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/portnums.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/telemetry.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/xmodem.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/channel.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/config.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/device_ui.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/module_config.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/portnums.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/telemetry.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/xmodem.proto";
 
 option csharp_namespace = "Meshtastic.Protobufs";
-option go_package = "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic";
+option go_package = "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic";
 option java_outer_classname = "MeshProtos";
 option java_package = "org.meshtastic.proto";
 option swift_prefix = "";

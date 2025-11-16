@@ -9,7 +9,7 @@ syntax = "proto2";
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic_core";
+option go_package = "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic_core";
 option java_package = "fi.kapsi.koti.jpa.nanopb";
 
 enum FieldType {

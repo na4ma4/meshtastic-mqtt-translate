@@ -1,3 +1,14 @@
+/.makefiles
+/.github
+/.git
+/.artifacts
+/.vscode
+/.idea
+/testdata
+/.docker.yml
+/.gitignore
+/.golangci.yml
+/.gitattributes
 .makefiles
 .github
 .git

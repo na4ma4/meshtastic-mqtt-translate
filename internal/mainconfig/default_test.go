@@ -4,7 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/internal/mainconfig"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mainconfig"
+
 	"github.com/spf13/viper"
 )
 

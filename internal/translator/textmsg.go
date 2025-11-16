@@ -1,6 +1,6 @@
 package translator
 
-// import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic"
+// import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 
 // type TextMessageApp struct {
 // }

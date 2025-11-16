@@ -1,0 +1,21 @@
+{
+    "bitfield": 1,
+    "channel": 0,
+    "from": 2697523544,
+    "hop_start": 7,
+    "hops_away": 4,
+    "id": 1815694999,
+    "payload": {
+        "environment_metrics": {
+            "temperature": 26.670000076293945,
+            "relative_humidity": null,
+            "barometric_pressure": 998.319091796875
+        }
+    },
+    "rssi": -45,
+    "sender": "!44be043f",
+    "snr": 11.5,
+    "timestamp": 1763267896,
+    "to": 4294967295,
+    "type": "TELEMETRY_APP"
+}

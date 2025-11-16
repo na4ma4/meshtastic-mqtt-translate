@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic"
+	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 )
 
 type User struct {

@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultHealthCheckPort = 8099
+)
+
 // ConfigInit is the common config initialisation for the commands.
 func ConfigInit() {
 	viper.SetConfigName("options")
@@ -18,6 +22,15 @@ func ConfigInit() {
 	viper.AddConfigPath("/usr/local/meshtastic-mqtt-relay/etc")
 	viper.AddConfigPath("/data")
 	viper.AddConfigPath(".")
+
+	viper.SetDefault("store.slow-threshold", "1s")
+	_ = viper.BindEnv("store.slow-threshold", "STORE_SLOW_THRESHOLD")
+
+	viper.SetDefault("broker.keepalive", "1m")
+	_ = viper.BindEnv("broker.keepalive", "BROKER_KEEPALIVE")
+
+	viper.SetDefault("healthcheck.port", defaultHealthCheckPort)
+	_ = viper.BindEnv("healthcheck.port", "HEALTHCHECK_PORT")
 
 	// check if /data/optons.json or ./testdata/options.json exists.
 	if _, err := os.Stat("./testdata/options.json"); err == nil {

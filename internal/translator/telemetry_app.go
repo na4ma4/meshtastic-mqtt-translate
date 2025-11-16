@@ -4,7 +4,7 @@ package translator
 import (
 	"encoding/json"
 
-	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic"
+	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 )
 
 // DeviceMetrics - Key native device metrics such as battery level.
@@ -12,11 +12,11 @@ type DeviceMetrics struct {
 	// 0-100 (>100 means powered)
 	BatteryLevel *uint32 `json:"battery_level,omitempty"`
 	// Voltage measured
-	Voltage *float64 `json:"voltage,omitempty"`
+	Voltage *SpecialFloat64 `json:"voltage,omitempty"`
 	// Utilization for the current channel, including well formed TX, RX and malformed RX (aka noise).
-	ChannelUtilization *float64 `json:"channel_utilization,omitempty"`
+	ChannelUtilization *SpecialFloat64 `json:"channel_utilization,omitempty"`
 	// Percent of airtime for transmission used within the last hour.
-	AirUtilTx *float64 `json:"air_util_tx,omitempty"`
+	AirUtilTx *SpecialFloat64 `json:"air_util_tx,omitempty"`
 	// How long the device has been running since the last reboot (in seconds)
 	UptimeSeconds *uint32 `json:"uptime_seconds,omitempty"`
 }
@@ -32,9 +32,9 @@ func NewDeviceMetrics(in *meshtastic.DeviceMetrics) *TelemetryDeviceMetrics {
 	return &TelemetryDeviceMetrics{
 		DeviceMetrics: &DeviceMetrics{
 			BatteryLevel:       in.BatteryLevel,
-			Voltage:            ptrFloat(in.Voltage),
-			ChannelUtilization: ptrFloat(in.ChannelUtilization),
-			AirUtilTx:          ptrFloat(in.AirUtilTx),
+			Voltage:            specialPtrFloat(in.Voltage),
+			ChannelUtilization: specialPtrFloat(in.ChannelUtilization),
+			AirUtilTx:          specialPtrFloat(in.AirUtilTx),
 			UptimeSeconds:      in.UptimeSeconds,
 		},
 	}
@@ -230,51 +230,51 @@ func (p *TelemetryHostMetrics) ToJSON() ([]byte, error) {
 // EnvironmentMetrics - Weather station or other environmental metrics.
 type EnvironmentMetrics struct {
 	// Temperature measured
-	Temperature *float64 `json:"temperature,omitempty"`
+	Temperature *SpecialFloat64 `json:"temperature,omitempty"`
 	// Relative humidity percent measured
-	RelativeHumidity *float64 `json:"relative_humidity,omitempty"`
+	RelativeHumidity *SpecialFloat64 `json:"relative_humidity,omitempty"`
 	// Barometric pressure in hPA measured
-	BarometricPressure *float64 `json:"barometric_pressure,omitempty"`
+	BarometricPressure *SpecialFloat64 `json:"barometric_pressure,omitempty"`
 	// Gas resistance in MOhm measured
-	GasResistance *float64 `json:"gas_resistance,omitempty"`
+	GasResistance *SpecialFloat64 `json:"gas_resistance,omitempty"`
 	// Voltage measured (To be depreciated in favor of PowerMetrics in Meshtastic 3.x)
-	Voltage *float64 `json:"voltage,omitempty"`
+	Voltage *SpecialFloat64 `json:"voltage,omitempty"`
 	// Current measured (To be depreciated in favor of PowerMetrics in Meshtastic 3.x)
-	Current *float64 `json:"current,omitempty"`
+	Current *SpecialFloat64 `json:"current,omitempty"`
 	// relative scale IAQ value as measured by Bosch BME680 . value 0-500.
 	// Belongs to Air Quality but is not particle but VOC measurement. Other VOC values can also be put in here.
 	Iaq *uint32 `json:"iaq,omitempty"`
 	// RCWL9620 Doppler Radar Distance Sensor, used for water level detection. Float value in mm.
-	Distance *float64 `json:"distance,omitempty"`
+	Distance *SpecialFloat64 `json:"distance,omitempty"`
 	// VEML7700 high accuracy ambient light(Lux) digital 16-bit resolution sensor.
-	Lux *float64 `json:"lux,omitempty"`
+	Lux *SpecialFloat64 `json:"lux,omitempty"`
 	// VEML7700 high accuracy white light(irradiance) not calibrated digital 16-bit resolution sensor.
-	WhiteLux *float64 `json:"white_lux,omitempty"`
+	WhiteLux *SpecialFloat64 `json:"white_lux,omitempty"`
 	// Infrared lux
-	IrLux *float64 `json:"ir_lux,omitempty"`
+	IrLux *SpecialFloat64 `json:"ir_lux,omitempty"`
 	// Ultraviolet lux
-	UvLux *float64 `json:"uv_lux,omitempty"`
+	UvLux *SpecialFloat64 `json:"uv_lux,omitempty"`
 	// Wind direction in degrees
 	// 0 degrees = North, 90 = East, etc...
 	WindDirection *uint32 `json:"wind_direction,omitempty"`
 	// Wind speed in m/s
-	WindSpeed *float64 `json:"wind_speed,omitempty"`
+	WindSpeed *SpecialFloat64 `json:"wind_speed,omitempty"`
 	// Weight in KG
-	Weight *float64 `json:"weight,omitempty"`
+	Weight *SpecialFloat64 `json:"weight,omitempty"`
 	// Wind gust in m/s
-	WindGust *float64 `json:"wind_gust,omitempty"`
+	WindGust *SpecialFloat64 `json:"wind_gust,omitempty"`
 	// Wind lull in m/s
-	WindLull *float64 `json:"wind_lull,omitempty"`
+	WindLull *SpecialFloat64 `json:"wind_lull,omitempty"`
 	// Radiation in µR/h
-	Radiation *float64 `json:"radiation,omitempty"`
+	Radiation *SpecialFloat64 `json:"radiation,omitempty"`
 	// Rainfall in the last hour in mm
-	Rainfall1H *float64 `json:"rainfall_1h,omitempty"`
+	Rainfall1H *SpecialFloat64 `json:"rainfall_1h,omitempty"`
 	// Rainfall in the last 24 hours in mm
-	Rainfall24H *float64 `json:"rainfall_24h,omitempty"`
+	Rainfall24H *SpecialFloat64 `json:"rainfall_24h,omitempty"`
 	// Soil moisture measured (% 1-100)
 	SoilMoisture *uint32 `json:"soil_moisture,omitempty"`
 	// Soil temperature measured (*C)
-	SoilTemperature *float64 `json:"soil_temperature,omitempty"`
+	SoilTemperature *SpecialFloat64 `json:"soil_temperature,omitempty"`
 }
 type TelemetryEnvironmentMetrics struct {
 	EnvironmentMetrics *EnvironmentMetrics `json:"environment_metrics,omitempty"`
@@ -286,28 +286,28 @@ func NewEnvironmentMetrics(in *meshtastic.EnvironmentMetrics) *TelemetryEnvironm
 	}
 	return &TelemetryEnvironmentMetrics{
 		EnvironmentMetrics: &EnvironmentMetrics{
-			Temperature:        ptrFloat(in.Temperature),
-			RelativeHumidity:   ptrFloat(in.RelativeHumidity),
-			BarometricPressure: ptrFloat(in.BarometricPressure),
-			GasResistance:      ptrFloat(in.GasResistance),
-			Voltage:            ptrFloat(in.Voltage),
-			Current:            ptrFloat(in.Current),
+			Temperature:        specialPtrFloat(in.Temperature),
+			RelativeHumidity:   specialPtrFloat(in.RelativeHumidity),
+			BarometricPressure: specialPtrFloat(in.BarometricPressure),
+			GasResistance:      specialPtrFloat(in.GasResistance),
+			Voltage:            specialPtrFloat(in.Voltage),
+			Current:            specialPtrFloat(in.Current),
 			Iaq:                in.Iaq,
-			Distance:           ptrFloat(in.Distance),
-			Lux:                ptrFloat(in.Lux),
-			WhiteLux:           ptrFloat(in.WhiteLux),
-			IrLux:              ptrFloat(in.IrLux),
-			UvLux:              ptrFloat(in.UvLux),
+			Distance:           specialPtrFloat(in.Distance),
+			Lux:                specialPtrFloat(in.Lux),
+			WhiteLux:           specialPtrFloat(in.WhiteLux),
+			IrLux:              specialPtrFloat(in.IrLux),
+			UvLux:              specialPtrFloat(in.UvLux),
 			WindDirection:      in.WindDirection,
-			WindSpeed:          ptrFloat(in.WindSpeed),
-			Weight:             ptrFloat(in.Weight),
-			WindGust:           ptrFloat(in.WindGust),
-			WindLull:           ptrFloat(in.WindLull),
-			Radiation:          ptrFloat(in.Radiation),
-			Rainfall1H:         ptrFloat(in.Rainfall_1H),
-			Rainfall24H:        ptrFloat(in.Rainfall_24H),
+			WindSpeed:          specialPtrFloat(in.WindSpeed),
+			Weight:             specialPtrFloat(in.Weight),
+			WindGust:           specialPtrFloat(in.WindGust),
+			WindLull:           specialPtrFloat(in.WindLull),
+			Radiation:          specialPtrFloat(in.Radiation),
+			Rainfall1H:         specialPtrFloat(in.Rainfall_1H),
+			Rainfall24H:        specialPtrFloat(in.Rainfall_24H),
 			SoilMoisture:       in.SoilMoisture,
-			SoilTemperature:    ptrFloat(in.SoilTemperature),
+			SoilTemperature:    specialPtrFloat(in.SoilTemperature),
 		},
 	}
 }

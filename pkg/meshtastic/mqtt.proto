@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package meshtastic;
 
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/config.proto";
-import "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic/mesh.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/config.proto";
+import "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic/mesh.proto";
 
 option csharp_namespace = "Meshtastic.Protobufs";
-option go_package = "github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic";
+option go_package = "github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic";
 option java_outer_classname = "MQTTProtos";
 option java_package = "org.meshtastic.proto";
 option swift_prefix = "";

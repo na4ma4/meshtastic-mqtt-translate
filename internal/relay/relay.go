@@ -11,67 +11,100 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/translator"
+	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/na4ma4/go-contextual"
 	"github.com/na4ma4/go-slogtool"
-	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/internal/store"
-	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/internal/translator"
-	"github.com/na4ma4/meshtastic-mqtt-bin-to-json/pkg/meshtastic"
 	"google.golang.org/protobuf/proto"
 )
 
-// defaultQuiesceInMilliseconds - Default quiesce time for MQTT disconnects.
-const defaultQuiesceInMilliseconds = 250
+const (
+	// defaultQuiesceInMilliseconds - Default quiesce time for MQTT disconnects.
+	defaultQuiesceInMilliseconds = 250
 
-// Config holds the relay configuration.
-type Config struct {
-	Broker   string
-	ClientID string
-	Topic    string
-	Username string
-	Password string
-	Store    store.Store
-	DryRun   bool
-}
+	// defaultErrorChannelBufferSize - Default buffer size for error channel.
+	defaultErrorChannelBufferSize = 10
+
+	// defaultWriteTimeoutSeconds - Default write timeout in seconds.
+	defaultWriteTimeoutSeconds = 10
+)
 
 // Relay handles the MQTT relay logic.
 type Relay struct {
+	Context      contextual.Context
 	Config       Config
 	Logger       *slog.Logger
 	sourceClient mqtt.Client
 	destClient   mqtt.Client
 	wg           sync.WaitGroup
+	errChan      chan error
 }
 
 // NewRelay creates a new relay instance.
-func NewRelay(config Config, logger *slog.Logger) (*Relay, error) {
+func NewRelay(ctx contextual.Context, config Config, logger *slog.Logger) (*Relay, error) {
 	return &Relay{
-		Config: config,
-		Logger: logger,
+		Context: ctx,
+		Config:  config,
+		Logger:  logger,
+		errChan: make(chan error, defaultErrorChannelBufferSize),
 	}, nil
 }
 
-// Start begins the relay operation.
-func (r *Relay) Start(ctx context.Context) error {
-	// Connect to destination broker first
+func (r *Relay) connectDest(ctx context.Context) {
+	defer r.Logger.DebugContext(ctx, "connectDest(): finished")
+	r.Logger.DebugContext(ctx, "connectDest(): starting")
+
 	destOpts := mqtt.NewClientOptions().
 		AddBroker(r.Config.Broker).
-		SetClientID(r.Config.ClientID + "-dest")
+		SetClientID(r.Config.ClientID + "-dest").
+		SetAutoReconnect(true).
+		SetOnConnectHandler(r.destOnConnectHandler).
+		SetOrderMatters(false).
+		SetKeepAlive(r.Config.Keepalive).
+		SetWriteTimeout(defaultWriteTimeoutSeconds)
 
 	if r.Config.Username != "" {
 		destOpts.SetUsername(r.Config.Username)
 		destOpts.SetPassword(r.Config.Password)
+		destOpts.SetAutoReconnect(true)
 	}
 
 	r.destClient = mqtt.NewClient(destOpts)
-	if token := r.destClient.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("failed to connect to destination broker: %w", token.Error())
-	}
-	r.Logger.InfoContext(ctx, "Connected to destination MQTT broker")
+	token := r.destClient.Connect()
 
-	// Connect to source broker
+	select {
+	case <-ctx.Done():
+		r.Logger.InfoContext(ctx, "Context done before source broker connected")
+		return
+	case <-token.Done():
+		// continue
+	}
+
+	if token.Error() != nil {
+		r.errChan <- fmt.Errorf("failed to connect to destination broker: %w", token.Error())
+		return
+	}
+
+	if r.Config.DryRun {
+		r.Logger.InfoContext(ctx, "Dry run enabled, not publishing to destination broker")
+		r.destClient.Disconnect(defaultQuiesceInMilliseconds)
+	}
+}
+
+func (r *Relay) connectSrc(ctx context.Context) {
+	defer r.Logger.DebugContext(ctx, "connectSrc(): finished")
+	r.Logger.DebugContext(ctx, "connectSrc(): starting")
+
 	sourceOpts := mqtt.NewClientOptions().
 		AddBroker(r.Config.Broker).
-		SetClientID(r.Config.ClientID + "-source")
+		SetClientID(r.Config.ClientID + "-source").
+		SetAutoReconnect(true).
+		SetOnConnectHandler(r.srcOnConnectHandler).
+		SetOrderMatters(false).
+		SetKeepAlive(r.Config.Keepalive).
+		SetWriteTimeout(defaultWriteTimeoutSeconds)
 
 	if r.Config.Username != "" {
 		sourceOpts.SetUsername(r.Config.Username)
@@ -81,18 +114,81 @@ func (r *Relay) Start(ctx context.Context) error {
 	sourceOpts.SetDefaultPublishHandler(r.messageHandler)
 
 	r.sourceClient = mqtt.NewClient(sourceOpts)
-	if token := r.sourceClient.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("failed to connect to source broker: %w", token.Error())
-	}
-	r.Logger.InfoContext(ctx, "Connected to source MQTT broker")
+	token := r.sourceClient.Connect()
 
+	select {
+	case <-ctx.Done():
+		r.Logger.InfoContext(ctx, "Context done before source broker connected")
+		return
+	case <-token.Done():
+		// continue
+	}
+
+	if token.Error() != nil {
+		r.errChan <- fmt.Errorf("failed to connect to source broker: %w", token.Error())
+	}
+}
+
+// Start begins the relay operation.
+func (r *Relay) Start(ctx context.Context) {
+	// Connect to destination broker first
+	go r.connectDest(ctx)
+
+	// Connect to source broker
+	go r.connectSrc(ctx)
+}
+
+func (r *Relay) destOnConnectHandler(client mqtt.Client) {
+	r.Logger.Info("Connected to destination MQTT broker", slog.Bool("dest.connected", client.IsConnected()))
+}
+
+func (r *Relay) srcOnConnectHandler(client mqtt.Client) {
+	r.Logger.Info("Connected to source MQTT broker", slog.Bool("src.connected", client.IsConnected()))
 	// Subscribe to source topic
-	if token := r.sourceClient.Subscribe(r.Config.Topic, 0, nil); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("failed to subscribe to topic: %w", token.Error())
-	}
-	r.Logger.InfoContext(ctx, "Subscribed to topic", "topic", r.Config.Topic)
+	token := client.Subscribe(r.Config.Topic, 0, nil)
 
-	return nil
+	select {
+	case <-r.Context.Done():
+		r.Logger.InfoContext(r.Context, "Context done before subscription completed")
+		return
+	case <-token.Done():
+		// continue
+	}
+
+	if token.Error() != nil {
+		r.errChan <- fmt.Errorf("failed to subscribe to topic: %w", token.Error())
+		return
+	}
+	r.Logger.Info("Subscribed to topic", slog.String("topic", r.Config.Topic))
+}
+
+func (r *Relay) Run(ctx context.Context) <-chan error {
+	defer r.Logger.DebugContext(ctx, "Run(): finished")
+	r.Logger.DebugContext(ctx, "Run(): starting")
+
+	outErrChan := make(chan error, 1)
+
+	go func() {
+		defer r.Logger.DebugContext(ctx, "Run().go func(): finished")
+		r.Logger.DebugContext(ctx, "Run().go func(): starting")
+
+		defer close(outErrChan)
+		defer r.Stop(ctx)
+		r.Start(ctx)
+
+		for {
+			select {
+			case <-ctx.Done():
+				outErrChan <- ctx.Err()
+				return
+			case err := <-r.errChan:
+				outErrChan <- err
+				return
+			}
+		}
+	}()
+
+	return outErrChan
 }
 
 // Stop stops the relay.
@@ -112,6 +208,7 @@ func (r *Relay) Stop(ctx context.Context) {
 func (r *Relay) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 	r.wg.Add(1)
 	defer r.wg.Done()
+	defer msg.Ack()
 
 	payload, topic := r.HandleMessagePayload(msg.Payload(), msg.Topic())
 	if payload != nil && topic != "" {
@@ -122,6 +219,7 @@ func (r *Relay) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 		}
 		if token := r.destClient.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
 			r.Logger.Error("Failed to publish to destination", slogtool.ErrorAttr(token.Error()))
+			r.errChan <- token.Error()
 		} else {
 			r.Logger.Info(">", slog.String("topic", topic))
 		}
@@ -137,10 +235,12 @@ func (r *Relay) HandleMessagePayload(payload []byte, topic string) ([]byte, stri
 		return nil, ""
 	}
 
-	r.Logger.Debug("Received message",
-		slog.String("topic", topic),
-		slog.String("payload", base64.StdEncoding.EncodeToString(payload)),
-	)
+	if r.Logger.Enabled(context.Background(), slog.LevelDebug) {
+		r.Logger.Debug("Received message",
+			slog.String("topic", topic),
+			slog.String("payload", base64.StdEncoding.EncodeToString(payload)),
+		)
+	}
 	if envelope.GetPacket() == nil {
 		r.Logger.Info("<", slog.String("topic", topic))
 	} else {
@@ -152,13 +252,11 @@ func (r *Relay) HandleMessagePayload(payload []byte, topic string) ([]byte, stri
 	}
 
 	// Convert to JSON
-	jsonData, err := r.ConvertToJSON(topic, &envelope)
+	jsonData, err := r.ConvertToJSON(topic, payload, &envelope)
 	if err != nil {
 		r.Logger.Error("Failed to convert to JSON", slogtool.ErrorAttr(err))
 		return nil, ""
 	}
-
-	r.conditionalStore(&envelope, payload, jsonData)
 
 	newTopic := strings.Replace(topic, "/e/", "/json/", 1)
 
@@ -171,7 +269,7 @@ func (r *Relay) HandleMessagePayload(payload []byte, topic string) ([]byte, stri
 	return jsonData, newTopic
 }
 
-func (r *Relay) conditionalStore(envelope *meshtastic.ServiceEnvelope, payload, jsonData []byte) {
+func (r *Relay) conditionalStore(envelope *meshtastic.ServiceEnvelope, payload []byte, jsonData *Message) {
 	if r.Config.Store != nil {
 		var portNum string
 		messageID := strconv.FormatInt(int64(envelope.GetPacket().GetId()), 10)
@@ -183,28 +281,12 @@ func (r *Relay) conditionalStore(envelope *meshtastic.ServiceEnvelope, payload, 
 		if saveErr := r.Config.Store.Save(messageID, portNum, payload, jsonData); saveErr != nil {
 			r.Logger.Error("Failed to save JSON data", slogtool.ErrorAttr(saveErr))
 		} else {
-			r.Logger.Info("Saved JSON data",
+			r.Logger.Debug("Saved JSON data",
 				slog.String("messageID", messageID),
 				slog.String("portNum", portNum),
 			)
 		}
 	}
-}
-
-type Message struct {
-	Bitfield  *uint32 `json:"bitfield,omitempty"`
-	Channel   uint32  `json:"channel"`
-	From      uint32  `json:"from"`
-	HopStart  uint32  `json:"hop_start"`
-	HopsAway  uint32  `json:"hops_away"`
-	ID        uint32  `json:"id"`
-	Payload   any     `json:"payload"`
-	RSSI      int32   `json:"rssi"`
-	Sender    string  `json:"sender"`
-	SNR       float64 `json:"snr"`
-	Timestamp uint32  `json:"timestamp"`
-	To        uint32  `json:"to"`
-	Type      string  `json:"type"`
 }
 
 // decodePayload decodes the payload based on the port number.
@@ -222,9 +304,10 @@ func (r *Relay) decodePayload(decoded *meshtastic.Data) (any, error) {
 		return translator.New(translator.NewStoreForwardApp).Decode(decoded.GetPayload())
 	case meshtastic.PortNum_TRACEROUTE_APP: // TODO: Provides a traceroute functionality to show the route a packet towards
 		return translator.New(translator.NewTracerouteApp).Decode(decoded.GetPayload())
+	case meshtastic.PortNum_ROUTING_APP: // Protocol control packets for mesh protocol use.
+		return translator.New(translator.NewRoutingApp).Decode(decoded.GetPayload())
 	case meshtastic.PortNum_UNKNOWN_APP, //nolint:staticcheck // deprecated field
 		meshtastic.PortNum_REMOTE_HARDWARE_APP,         // reserved for GPIO remote hardware
-		meshtastic.PortNum_ROUTING_APP,                 // Protocol control packets for mesh protocol use.
 		meshtastic.PortNum_ADMIN_APP,                   // Admin control packets.
 		meshtastic.PortNum_TEXT_MESSAGE_COMPRESSED_APP, // Compressed TEXT_MESSAGE payloads. (handled in firmware)
 		meshtastic.PortNum_WAYPOINT_APP,                // TODO: Waypoint payloads.
@@ -263,20 +346,26 @@ func (r *Relay) decodeTelemetry(payload []byte) (any, error) {
 
 	switch variant := telemetry.GetVariant().(type) {
 	case *meshtastic.Telemetry_DeviceMetrics:
+		r.Logger.Debug("Decoding DeviceMetrics telemetry")
 		data, err := translator.New(translator.NewDeviceMetrics).Convert(variant.DeviceMetrics)
 		if err == nil {
 			data.Time = ptr(telemetry.GetTime())
 		}
 		return data, err
 	case *meshtastic.Telemetry_LocalStats:
+		r.Logger.Debug("Decoding LocalStats telemetry")
 		return translator.New(translator.NewLocalStats).Convert(variant.LocalStats)
 	case *meshtastic.Telemetry_PowerMetrics:
+		r.Logger.Debug("Decoding PowerMetrics telemetry")
 		return translator.New(translator.NewPowerMetrics).Convert(variant.PowerMetrics)
 	case *meshtastic.Telemetry_HostMetrics:
+		r.Logger.Debug("Decoding HostMetrics telemetry")
 		return translator.New(translator.NewHostMetrics).Convert(variant.HostMetrics)
 	case *meshtastic.Telemetry_EnvironmentMetrics:
+		r.Logger.Debug("Decoding EnvironmentMetrics telemetry")
 		return translator.New(translator.NewEnvironmentMetrics).Convert(variant.EnvironmentMetrics)
 	case *meshtastic.Telemetry_AirQualityMetrics:
+		r.Logger.Debug("Decoding AirQualityMetrics telemetry")
 		return translator.New(translator.NewAirQualityMetrics).Convert(variant.AirQualityMetrics)
 	default:
 		return fmt.Sprintf("unknown telemetry variant: %T", variant), nil
@@ -284,7 +373,7 @@ func (r *Relay) decodeTelemetry(payload []byte) (any, error) {
 }
 
 // ConvertToJSON converts a ServiceEnvelope to JSON.
-func (r *Relay) ConvertToJSON(topic string, envelope *meshtastic.ServiceEnvelope) ([]byte, error) {
+func (r *Relay) ConvertToJSON(topic string, payload []byte, envelope *meshtastic.ServiceEnvelope) ([]byte, error) {
 	// Create a map representation for better JSON output
 	// data := make(map[string]interface{})
 
@@ -306,7 +395,7 @@ func (r *Relay) ConvertToJSON(topic string, envelope *meshtastic.ServiceEnvelope
 		ID:        envelope.GetPacket().GetId(),
 		RSSI:      envelope.GetPacket().GetRxRssi(),
 		Sender:    sender,
-		SNR:       float64(envelope.GetPacket().GetRxSnr()),
+		SNR:       translator.SpecialFloat64(envelope.GetPacket().GetRxSnr()),
 		Timestamp: envelope.GetPacket().GetRxTime(),
 		To:        envelope.GetPacket().GetTo(),
 	}
@@ -332,11 +421,14 @@ func (r *Relay) ConvertToJSON(topic string, envelope *meshtastic.ServiceEnvelope
 	// 	data["type"] = decoded.Portnum.String()
 	// }
 
+	r.conditionalStore(envelope, payload, data)
+
 	buf := bytes.NewBuffer(nil)
 	enc := json.NewEncoder(buf)
-	enc.SetIndent("", "  ")
+	// log.Printf("Message: %+v", data)
+	// enc.SetIndent("", "  ")
 	if err := enc.Encode(data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to encode JSON: %w", err)
 	}
 
 	return buf.Bytes(), nil

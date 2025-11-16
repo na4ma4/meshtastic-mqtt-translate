@@ -1,8 +1,8 @@
-module github.com/na4ma4/meshtastic-mqtt-bin-to-json/magefiles
+module github.com/na4ma4/meshtastic-mqtt-translate/magefiles
 
-go 1.24.1
+go 1.25.2
 
-toolchain go1.24.6
+toolchain go1.25.3
 
 require (
 	github.com/dosquad/mage v0.3.2
@@ -27,13 +27,12 @@ require (
 	github.com/na4ma4/go-permbits v0.5.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/princjef/mageutil v1.0.0 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
