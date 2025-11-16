@@ -48,7 +48,16 @@ builds:
         goarch: amd64
 
 archives:
-  - allow_different_binary_count: true
+  - 
+    ids:
+      - meshtastic-mqtt-relay
+    formats: ["tar.gz"]
+    name_template: |
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ if (eq .Arch "arm64") }}aarch64{{ else }}{{ .Arch }}{{ end }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end -}}
+    allow_different_binary_count: true
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
 
 checksum:
   algorithm: sha256

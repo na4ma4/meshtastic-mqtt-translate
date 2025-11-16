@@ -3,6 +3,7 @@ module github.com/na4ma4/meshtastic-mqtt-translate
 go 1.25
 
 require (
+	github.com/dosquad/go-cliversion v0.3.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
