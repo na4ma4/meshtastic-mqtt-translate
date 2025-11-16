@@ -9,4 +9,6 @@ jobs:
   goreleaser:
     name: "Goreleaser"
     uses: na4ma4/actions/.github/workflows/goreleaser.yml@main
-    secrets: inherit
+    secrets:
+      GO_RELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOCKER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
