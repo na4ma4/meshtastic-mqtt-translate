@@ -12,6 +12,10 @@ import (
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/relay"
 )
 
+const (
+	defaultTimeout = 10 * time.Second
+)
+
 type WebServer struct {
 	Logger *slog.Logger
 	Port   int
@@ -36,9 +40,9 @@ func (s *WebServer) Start() <-chan error {
 	s.srv = &http.Server{
 		Addr:         ":" + strconv.Itoa(s.Port),
 		Handler:      s,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-		IdleTimeout:  time.Second,
+		ReadTimeout:  defaultTimeout,
+		WriteTimeout: defaultTimeout,
+		IdleTimeout:  defaultTimeout,
 	}
 	errChan := make(chan error, 1)
 	go func() {

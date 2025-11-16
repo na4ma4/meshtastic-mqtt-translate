@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/translator"
 	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
@@ -27,8 +28,8 @@ const (
 	// defaultErrorChannelBufferSize - Default buffer size for error channel.
 	defaultErrorChannelBufferSize = 10
 
-	// defaultWriteTimeoutSeconds - Default write timeout in seconds.
-	defaultWriteTimeoutSeconds = 10
+	// defaultWriteTimeout - Default write timeout in seconds.
+	defaultWriteTimeout = 10 * time.Second
 )
 
 // Relay handles the MQTT relay logic.
@@ -63,7 +64,7 @@ func (r *Relay) connectDest(ctx context.Context) {
 		SetOnConnectHandler(r.destOnConnectHandler).
 		SetOrderMatters(false).
 		SetKeepAlive(r.Config.Keepalive).
-		SetWriteTimeout(defaultWriteTimeoutSeconds)
+		SetWriteTimeout(defaultWriteTimeout)
 
 	if r.Config.Username != "" {
 		destOpts.SetUsername(r.Config.Username)
@@ -104,7 +105,7 @@ func (r *Relay) connectSrc(ctx context.Context) {
 		SetOnConnectHandler(r.srcOnConnectHandler).
 		SetOrderMatters(false).
 		SetKeepAlive(r.Config.Keepalive).
-		SetWriteTimeout(defaultWriteTimeoutSeconds)
+		SetWriteTimeout(defaultWriteTimeout)
 
 	if r.Config.Username != "" {
 		sourceOpts.SetUsername(r.Config.Username)

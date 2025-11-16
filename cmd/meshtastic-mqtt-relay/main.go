@@ -23,12 +23,13 @@ import (
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
-	Use:     "meshtastic-mqtt-relay",
-	Short:   "Meshtastic MQTT Relay",
-	Long:    `Meshtastic MQTT Relay is a tool for converting Meshtastic messages over MQTT from protobuf to JSON.`,
-	RunE:    mainCmd,
-	Args:    cobra.NoArgs,
-	Version: cliversion.Get().VersionString(),
+	Use:          "meshtastic-mqtt-relay",
+	Short:        "Meshtastic MQTT Relay",
+	Long:         `Meshtastic MQTT Relay is a tool for converting Meshtastic messages over MQTT from protobuf to JSON.`,
+	RunE:         mainCmd,
+	Args:         cobra.NoArgs,
+	Version:      cliversion.Get().VersionString(),
+	SilenceUsage: true,
 }
 
 func init() {
@@ -67,8 +68,16 @@ func init() {
 	_ = viper.BindEnv("store.dsn", "STORE_DSN")
 }
 
+var ErrNoUsage = errors.New("")
+
 func main() {
-	_ = rootCmd.Execute()
+	if err := rootCmd.Execute(); errors.Is(err, ErrNoUsage) {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	} else if err != nil {
+		_ = rootCmd.Usage()
+		os.Exit(1)
+	}
 }
 
 func mainCmd(_ *cobra.Command, _ []string) error {
@@ -105,7 +114,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	{
 		if st, err := getStore(viper.GetString("store.dsn"), storeCfg); err != nil && !errors.Is(err, ErrEmptyDSN) {
 			logger.ErrorContext(ctx, "Failed to create store", slogtool.ErrorAttr(err))
-			return err
+			return fmt.Errorf("%w%w", ErrNoUsage, err)
 		} else if errors.Is(err, ErrEmptyDSN) {
 			logger.DebugContext(ctx, "No Store DSN set, not archiving messages")
 		} else if st != nil {
@@ -125,7 +134,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		client, err = relay.NewRelay(ctx, config, logger)
 		if err != nil {
 			logger.ErrorContext(ctx, "Failed to create relay", slogtool.ErrorAttr(err))
-			return err
+			return fmt.Errorf("%w%w", ErrNoUsage, err)
 		}
 	}
 
@@ -147,14 +156,14 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		case err := <-clientErrChan:
 			if err != nil {
 				logger.ErrorContext(ctx, "Relay error", slogtool.ErrorAttr(err))
-				return err
+				return fmt.Errorf("%w%w", ErrNoUsage, err)
 			}
 
 			return nil
 		case err := <-healthErrChan:
 			if err != nil {
 				logger.ErrorContext(ctx, "Health server error", slogtool.ErrorAttr(err))
-				return err
+				return fmt.Errorf("%w%w", ErrNoUsage, err)
 			}
 
 			return nil
