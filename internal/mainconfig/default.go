@@ -32,8 +32,8 @@ func ConfigInit() {
 	viper.SetDefault("healthcheck.port", defaultHealthCheckPort)
 	_ = viper.BindEnv("healthcheck.port", "HEALTHCHECK_PORT")
 
-	viper.SetDefault("feature.fanout-client", false)
-	_ = viper.BindEnv("feature.fanout-client", "FEATURE_FANOUT_CLIENT")
+	viper.SetDefault("features.fanout-relay", false)
+	_ = viper.BindEnv("features.fanout-relay", "FEATURE_FANOUT_RELAY")
 
 	// check if /data/optons.json or ./testdata/options.json exists.
 	if _, err := os.Stat("./testdata/options.json"); err == nil {
