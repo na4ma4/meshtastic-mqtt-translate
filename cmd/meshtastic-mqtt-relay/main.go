@@ -107,6 +107,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		slog.String("broker.topic", viper.GetString("broker.topic")),
 		slog.String("fanout.topic", viper.GetString("fanout.topic")),
 		slog.Any("features", getFeatures()),
+		slog.String("version", cliversion.Get().VersionString()),
 		// slog.String("config.file", viper.ConfigFileUsed()),
 	)
 
@@ -138,7 +139,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	}
 
 	var foClient *fanout.Fanout
-	if viper.GetBool("feature.fanout-client") {
+	if viper.GetBool("features.fanout-relay") {
 		foConfig := fanout.Config{
 			TargetBaseTopic: viper.GetString("fanout.topic"),
 		}
@@ -148,7 +149,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		var err error
 		foClient, err = fanout.NewFanout(ctx, foConfig, logger)
 		if err != nil {
-			logger.ErrorContext(ctx, "Failed to create fanout client", slogtool.ErrorAttr(err))
+			logger.ErrorContext(ctx, "Failed to create fanout relay", slogtool.ErrorAttr(err))
 			return fmt.Errorf("%w%w", ErrNoUsage, err)
 		}
 	}
