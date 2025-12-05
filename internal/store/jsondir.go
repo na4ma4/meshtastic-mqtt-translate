@@ -2,7 +2,9 @@ package store
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/url"
@@ -37,6 +39,10 @@ func NewJSONDirStore(storeDir string, _ Config) *JSONDirStore {
 	return &JSONDirStore{config: JSONDirStoreConfig{Directory: storeDir}}
 }
 
+func (s *JSONDirStore) Close() error {
+	return nil
+}
+
 func (s *JSONDirStore) SaveOld(messageID, portNum string, payload, jsonData []byte) error {
 	{
 		fileName := path.Join(s.config.Directory, fmt.Sprintf("%s_%s.enc", messageID, portNum))
@@ -55,7 +61,7 @@ func (s *JSONDirStore) SaveOld(messageID, portNum string, payload, jsonData []by
 	return nil
 }
 
-func (s *JSONDirStore) Save(messageID, portNum string, payload []byte, msg MessageType) error {
+func (s *JSONDirStore) Save(_ context.Context, messageID, portNum string, payload []byte, msg MessageType) error {
 	{
 		fileName := path.Join(s.config.Directory, fmt.Sprintf("%s_%s.enc", messageID, portNum))
 		if err := writeFileAtomic(fileName, payload); err != nil {
@@ -82,8 +88,14 @@ func (s *JSONDirStore) Save(messageID, portNum string, payload []byte, msg Messa
 	return nil
 }
 
-func (s *JSONDirStore) Close() error {
-	return nil
+func (s *JSONDirStore) Get(_ context.Context, _ string) (MessageType, error) {
+	// Implementation for retrieving a message by ID
+	return nil, errors.New("Get method not implemented")
+}
+
+func (s *JSONDirStore) Iterate(_ context.Context, _ func(MessageType) error) error {
+	// Implementation for iterating over all messages
+	return errors.New("Iterate method not implemented")
 }
 
 func writeFileAtomic(filename string, data []byte) error {

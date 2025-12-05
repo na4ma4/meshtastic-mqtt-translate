@@ -1,4 +1,4 @@
-package relay
+package parser
 
 import (
 	"database/sql/driver"

@@ -1,4 +1,4 @@
-package relay
+package fanout
 
 type Status struct {
 	SourceBrokerConnected bool `json:"source_broker_connected"`
@@ -6,9 +6,9 @@ type Status struct {
 	Status                bool `json:"status"`
 }
 
-func (r *Relay) GetStatus() Status {
-	sourceConnected := r.sourceClient != nil && r.sourceClient.IsConnected()
-	destConnected := r.destClient != nil && r.destClient.IsConnected()
+func (f *Fanout) GetStatus() Status {
+	sourceConnected := f.sourceClient != nil && f.sourceClient.IsConnected()
+	destConnected := f.destClient != nil && f.destClient.IsConnected()
 	return Status{
 		SourceBrokerConnected: sourceConnected,
 		DestBrokerConnected:   destConnected,
