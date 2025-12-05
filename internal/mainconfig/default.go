@@ -35,6 +35,9 @@ func ConfigInit() {
 	viper.SetDefault("features.fanout-relay", false)
 	_ = viper.BindEnv("features.fanout-relay", "FEATURE_FANOUT_RELAY")
 
+	viper.SetDefault("features.message-store", false)
+	_ = viper.BindEnv("features.message-store", "FEATURE_MESSAGE_STORE")
+
 	// check if /data/optons.json or ./testdata/options.json exists.
 	if _, err := os.Stat("./testdata/options.json"); err == nil {
 		viper.SetConfigFile("./testdata/options.json")

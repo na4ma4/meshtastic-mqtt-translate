@@ -121,7 +121,8 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		Keepalive: viper.GetDuration("broker.keepalive"),
 	}
 
-	{
+	//nolint:nestif // TODO refactor for simplicity
+	if viper.GetBool("features.message-store") {
 		if st, err := getStore(viper.GetString("store.dsn"), storeCfg); err != nil && !errors.Is(err, ErrEmptyDSN) {
 			logger.ErrorContext(ctx, "Failed to create store", slogtool.ErrorAttr(err))
 			return fmt.Errorf("%w%w", ErrNoUsage, err)
@@ -136,6 +137,8 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 				)
 			}
 		}
+	} else {
+		logger.InfoContext(ctx, "Message store feature disabled, not archiving messages")
 	}
 
 	var foClient *fanout.Fanout
@@ -249,6 +252,7 @@ func getHealthServer(
 
 func getFeatures() map[string]bool {
 	features := make(map[string]bool)
-	features["fanout-client"] = viper.GetBool("feature.fanout-client")
+	features["fanout-relay"] = viper.GetBool("features.fanout-relay")
+	features["message-store"] = viper.GetBool("features.message-store")
 	return features
 }
