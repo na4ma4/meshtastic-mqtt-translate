@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql/driver"
 	"log/slog"
 	"time"
@@ -15,7 +16,9 @@ type MessageType interface {
 
 type Store interface {
 	// Save(messageID, portNum string, payload, jsonData []byte) error
-	Save(messageID, portNum string, payload []byte, jsonData MessageType) error
+	Save(ctx context.Context, messageID, portNum string, payload []byte, jsonData MessageType) error
+	Get(ctx context.Context, messageID string) (MessageType, error)
+	Iterate(ctx context.Context, f func(MessageType) error) error
 	Close() error
 }
 

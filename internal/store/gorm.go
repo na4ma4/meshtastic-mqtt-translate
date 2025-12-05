@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -69,7 +70,15 @@ func newGormStore(in gorm.Dialector, cfg Config) (*GormStore, error) {
 // 	return s.db.Create(&item).Error
 // }
 
-func (s *GormStore) Save(messageID, portNum string, payload []byte, msg MessageType) error {
+func (s *GormStore) Close() error {
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
+func (s *GormStore) Save(ctx context.Context, messageID, portNum string, payload []byte, msg MessageType) error {
 	item := gormMessage{
 		MessageID: messageID,
 		NodeFrom:  msg.GetFrom(),
@@ -78,15 +87,28 @@ func (s *GormStore) Save(messageID, portNum string, payload []byte, msg MessageT
 		Payload:   payload,
 		JSONData:  msg,
 	}
-	return s.db.Create(&item).Error
+	return s.db.WithContext(ctx).Create(&item).Error
 }
 
-func (s *GormStore) Close() error {
-	sqlDB, err := s.db.DB()
+func (s *GormStore) Get(ctx context.Context, messageID string) (MessageType, error) {
+	item, err := gorm.G[gormMessage](s.db).Where("MessageID = ?", messageID).First(ctx)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to get message by ID %s: %w", messageID, err)
 	}
-	return sqlDB.Close()
+	return item.JSONData, nil
+}
+
+func (s *GormStore) Iterate(ctx context.Context, f func(MessageType) error) error {
+	var messages []gormMessage
+	if err := s.db.WithContext(ctx).Order("CreatedAt desc").Find(&messages); err != nil {
+		return fmt.Errorf("failed to iterate messages: %w", err.Error)
+	}
+	for _, msg := range messages {
+		if err := f(msg.JSONData); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // // JSONB Interface for JSONB Field of yourTableName Table

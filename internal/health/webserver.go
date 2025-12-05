@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/fanout"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/relay"
 )
 
@@ -20,14 +21,16 @@ type WebServer struct {
 	Logger *slog.Logger
 	Port   int
 	Relay  *relay.Relay
+	Fanout *fanout.Fanout
 	srv    *http.Server
 }
 
-func NewServer(port int, logger *slog.Logger, relay *relay.Relay) *WebServer {
+func NewServer(port int, logger *slog.Logger, relay *relay.Relay, fanout *fanout.Fanout) *WebServer {
 	return &WebServer{
 		Logger: logger,
 		Port:   port,
 		Relay:  relay,
+		Fanout: fanout,
 	}
 }
 
@@ -67,9 +70,26 @@ func (s *WebServer) Stop(ctx context.Context) error {
 func (s *WebServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Logger.Debug("Health check", slog.String("remote_addr", r.RemoteAddr))
 
+	statusOK := true
+	status := map[string]interface{}{}
+
+	if s.Fanout != nil {
+		st := s.Fanout.GetStatus()
+		status["fanout"] = st
+		statusOK = statusOK && st.Status
+	}
+
+	if s.Relay != nil {
+		relayStatus := s.Relay.GetStatus()
+		status["relay"] = relayStatus
+		statusOK = statusOK && relayStatus.Status
+	}
+
+	status["status"] = statusOK
+
 	w.Header().Set("Content-Type", "application/json")
-	status := s.Relay.GetStatus()
-	if !status.Status {
+
+	if !statusOK {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	} else {
 		w.WriteHeader(http.StatusOK)

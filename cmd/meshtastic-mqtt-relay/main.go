@@ -13,6 +13,7 @@ import (
 	"github.com/dosquad/go-cliversion"
 	"github.com/na4ma4/go-contextual"
 	"github.com/na4ma4/go-slogtool"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/fanout"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/health"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mainconfig"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/relay"
@@ -59,6 +60,10 @@ func init() {
 	_ = viper.BindPFlag("broker.topic", rootCmd.PersistentFlags().Lookup("topic"))
 	_ = viper.BindEnv("broker.topic", "MQTT_TOPIC")
 
+	rootCmd.PersistentFlags().StringP("fanout-topic", "f", "msh/ANZ/fanout/", "Fanout MQTT topic parent (optional)")
+	_ = viper.BindPFlag("fanout.topic", rootCmd.PersistentFlags().Lookup("fanout-topic"))
+	_ = viper.BindEnv("fanout.topic", "FANOUT_TOPIC")
+
 	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "Dry run mode (optional)")
 	_ = viper.BindPFlag("dry-run", rootCmd.PersistentFlags().Lookup("dry-run"))
 	_ = viper.BindEnv("dry-run", "MQTT_DRY_RUN")
@@ -80,6 +85,7 @@ func main() {
 	}
 }
 
+//nolint:funlen,gocognit // TODO refactor for simplicity
 func mainCmd(_ *cobra.Command, _ []string) error {
 	ctx := contextual.NewCancellable(context.Background())
 	defer ctx.Cancel()
@@ -91,6 +97,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	if viper.GetBool("debug") {
 		storeCfg.LogLevel = slog.LevelDebug
 	}
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: storeCfg.LogLevel}))
 	storeCfg.Logger = logger
 	logger.Debug("Debug logging enabled") // will only show if debug is enabled
@@ -98,6 +105,8 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	logger.InfoContext(ctx, "Starting Meshtastic MQTT Relay",
 		slog.String("broker.address", viper.GetString("broker.address")),
 		slog.String("broker.topic", viper.GetString("broker.topic")),
+		slog.String("fanout.topic", viper.GetString("fanout.topic")),
+		slog.Any("features", getFeatures()),
 		// slog.String("config.file", viper.ConfigFileUsed()),
 	)
 
@@ -128,6 +137,22 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		}
 	}
 
+	var foClient *fanout.Fanout
+	if viper.GetBool("feature.fanout-client") {
+		foConfig := fanout.Config{
+			TargetBaseTopic: viper.GetString("fanout.topic"),
+		}
+		foConfig.CopyFromRelayConfig(config)
+		foConfig.ClientID += "-fanout"
+
+		var err error
+		foClient, err = fanout.NewFanout(ctx, foConfig, logger)
+		if err != nil {
+			logger.ErrorContext(ctx, "Failed to create fanout client", slogtool.ErrorAttr(err))
+			return fmt.Errorf("%w%w", ErrNoUsage, err)
+		}
+	}
+
 	var client *relay.Relay
 	{
 		var err error
@@ -138,7 +163,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		}
 	}
 
-	healthErrChan, stopHealthServer := getHealthServer(ctx, logger, client)
+	healthErrChan, stopHealthServer := getHealthServer(ctx, logger, client, foClient)
 	defer stopHealthServer()
 
 	// Wait for interrupt signal
@@ -146,7 +171,14 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	clientErrChan := client.Run(ctx)
+	var foClientErrChan <-chan error
+	if foClient != nil {
+		foClientErrChan = foClient.Run(ctx)
+	}
 	defer client.Stop(ctx)
+	if foClient != nil {
+		defer foClient.Stop(ctx)
+	}
 	defer logger.InfoContext(ctx, "Shutting down Meshtastic MQTT Relay")
 
 	for {
@@ -156,6 +188,13 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		case err := <-clientErrChan:
 			if err != nil {
 				logger.ErrorContext(ctx, "Relay error", slogtool.ErrorAttr(err))
+				return fmt.Errorf("%w%w", ErrNoUsage, err)
+			}
+
+			return nil
+		case err := <-foClientErrChan:
+			if err != nil {
+				logger.ErrorContext(ctx, "Fanout client error", slogtool.ErrorAttr(err))
 				return fmt.Errorf("%w%w", ErrNoUsage, err)
 			}
 
@@ -186,9 +225,14 @@ func getStore(dsn string, cfg store.Config) (store.Store, error) {
 	return store.NewDetectStore(u, cfg)
 }
 
-func getHealthServer(ctx context.Context, logger *slog.Logger, client *relay.Relay) (<-chan error, func()) {
+func getHealthServer(
+	ctx context.Context,
+	logger *slog.Logger,
+	client *relay.Relay,
+	fanout *fanout.Fanout,
+) (<-chan error, func()) {
 	if viper.GetInt("healthcheck.port") > 0 {
-		healthServer := health.NewServer(viper.GetInt("healthcheck.port"), logger, client)
+		healthServer := health.NewServer(viper.GetInt("healthcheck.port"), logger, client, fanout)
 		return healthServer.Start(), func() {
 			if err := healthServer.Stop(ctx); err != nil {
 				logger.ErrorContext(ctx, "Failed to stop health server", slogtool.ErrorAttr(err))
@@ -200,4 +244,10 @@ func getHealthServer(ctx context.Context, logger *slog.Logger, client *relay.Rel
 	return healthErrChan, func() {
 		close(healthErrChan)
 	}
+}
+
+func getFeatures() map[string]bool {
+	features := make(map[string]bool)
+	features["fanout-client"] = viper.GetBool("feature.fanout-client")
+	return features
 }

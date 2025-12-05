@@ -1,4 +1,4 @@
-package relay_test
+package fanout_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/fanout"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/parser"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/relay"
 
@@ -20,23 +21,23 @@ import (
 const testTopic = "msh/ANZ/2/json/MediumFast/!44be043f"
 
 func TestNewRelay(t *testing.T) {
-	config := relay.Config{
-		Broker:   "tcp://localhost:1883",
-		ClientID: "test-client",
-		Topic:    "test/topic",
+	config := fanout.Config{
+		Broker:      "tcp://localhost:1883",
+		ClientID:    "test-client",
+		SourceTopic: "test/topic",
 	}
 
-	relayClient, err := relay.NewRelay(contextual.New(context.TODO()), config, slog.New(slog.DiscardHandler))
+	fanoutClient, err := fanout.NewFanout(contextual.New(context.TODO()), config, slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatalf("Failed to create relay: %v", err)
 	}
 
-	if relayClient == nil {
+	if fanoutClient == nil {
 		t.Fatal("Expected relay to be non-nil")
 	}
 
-	if relayClient.Config.Broker != config.Broker {
-		t.Errorf("Expected Broker to be %s, got %s", config.Broker, relayClient.Config.Broker)
+	if fanoutClient.Config.Broker != config.Broker {
+		t.Errorf("Expected Broker to be %s, got %s", config.Broker, fanoutClient.Config.Broker)
 	}
 }
 
@@ -45,7 +46,7 @@ func TestConvertToJSONExamples(t *testing.T) {
 	// const encodedMessage = `Ck4NoBJToBX/////IiEIQxIdDbxCFGkSFghlFTeJhUAdTxtYQCVhxI08KLb50gE1VKDu4z22QRRpRQAA0EBIAmDC//////////8BeAeYATgSCk1lZGl1bUZhc3QaCSE0NGJlMDQzZg==`
 	// const encodedMessage = `Co8BDVBWMEoV/////yJiCAQSXAoJITRhMzA1NjUwEhxUZXN0IFNlbWktUGVybWFuZW50IFJlcGVhdGVyGgNsbzAiBiTsSjBWUCgQQiCcQ4D2/JjAwtC31HoIzbngJRmLWcsdxcO043jvDPRdf0gASAA1243IIz2lQhRpRQAAMEFIB2DO//////////8BeAeYAVASCk1lZGl1bUZhc3QaCSE0NGJlMDQzZg==`
 	const encodedMessage = `CooBDSDPWnwVSASN9yJdCAQSVAoJITdjNWFjZjIwEhVBbm5lcmxleSBKdW5jdGlvbiBXU0waBGNmMjAiBiRYfFrPICgsQiBy9dXwrv1cheaZadLd6mkQc8qaIOyVAbhtziuwmcQTfjVCWQJ6NYe3B1A9YEMUaUUAADRBSAFg0P//////////AXgFmAFQEgpNZWRpdW1GYXN0GgkhNDRiZTA0M2Y=`
-	relayClient := &relay.Relay{
+	fanoutClient := &fanout.Fanout{
 		Logger: slog.New(slog.DiscardHandler),
 		Parser: parser.NewParser(slog.New(slog.DiscardHandler)),
 	}
@@ -55,7 +56,7 @@ func TestConvertToJSONExamples(t *testing.T) {
 		t.Fatalf("Failed to decode base64 message: %v", err)
 	}
 
-	relayClient.HandleMessagePayload(t.Context(), data, "msh/ANZ/2/e/MediumFast/!44be043f")
+	fanoutClient.HandleMessagePayload(t.Context(), data, "msh/ANZ/2/e/MediumFast/!44be043f")
 	// t.Fail()
 }
 
@@ -128,7 +129,7 @@ func TestConvertToJSONTable(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{
 				Level: slog.LevelDebug,
 			}))
-			relayClient := &relay.Relay{
+			fanoutClient := &relay.Relay{
 				// Logger: slog.New(slog.DiscardHandler),
 				Logger: logger,
 				Parser: parser.NewParser(logger),
@@ -139,7 +140,7 @@ func TestConvertToJSONTable(t *testing.T) {
 				t.Fatalf("Failed to decode base64 message: %v", err)
 			}
 
-			payload, _ := relayClient.HandleMessagePayload(t.Context(), data, testTopic)
+			payload, _ := fanoutClient.HandleMessagePayload(t.Context(), data, testTopic)
 
 			// log.Printf("Converted JSON: %s", payload)
 			// log.Printf("Expected JSON: %s", tt.expectedJSON)
