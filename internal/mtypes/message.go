@@ -1,4 +1,4 @@
-package parser
+package mtypes
 
 import (
 	"database/sql/driver"

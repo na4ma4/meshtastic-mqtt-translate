@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/cmdconst"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mtypes"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/parser"
 	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 
@@ -17,14 +19,6 @@ import (
 	"github.com/na4ma4/go-contextual"
 	"github.com/na4ma4/go-slogtool"
 	"google.golang.org/protobuf/proto"
-)
-
-const (
-	// defaultQuiesceInMilliseconds - Default quiesce time for MQTT disconnects.
-	defaultQuiesceInMilliseconds = 250
-
-	// defaultErrorChannelBufferSize - Default buffer size for error channel.
-	defaultErrorChannelBufferSize = 10
 )
 
 // Relay handles the MQTT relay logic.
@@ -46,7 +40,7 @@ func NewRelay(ctx contextual.Context, config Config, logger *slog.Logger) (*Rela
 		Context: ctx,
 		Config:  config,
 		Logger:  logger,
-		errChan: make(chan error, defaultErrorChannelBufferSize),
+		errChan: make(chan error, cmdconst.DefaultErrorChannelBufferSize),
 	}
 	r.Parser = parser.NewParser(logger, parser.WithOnParseHandler(r.conditionalStore))
 	return r, nil
@@ -90,7 +84,7 @@ func (r *Relay) connectDest(ctx context.Context) {
 
 	if r.Config.DryRun {
 		r.Logger.InfoContext(ctx, "Dry run enabled, not publishing to destination broker")
-		r.destClient.Disconnect(defaultQuiesceInMilliseconds)
+		r.destClient.Disconnect(cmdconst.DefaultQuiesceInMilliseconds)
 	}
 }
 
@@ -196,11 +190,11 @@ func (r *Relay) Run(ctx context.Context) <-chan error {
 // Stop stops the relay.
 func (r *Relay) Stop(ctx context.Context) {
 	if r.sourceClient != nil && r.sourceClient.IsConnected() {
-		r.sourceClient.Disconnect(defaultQuiesceInMilliseconds)
+		r.sourceClient.Disconnect(cmdconst.DefaultQuiesceInMilliseconds)
 		r.Logger.InfoContext(ctx, "Disconnected from source MQTT broker")
 	}
 	if r.destClient != nil && r.destClient.IsConnected() {
-		r.destClient.Disconnect(defaultQuiesceInMilliseconds)
+		r.destClient.Disconnect(cmdconst.DefaultQuiesceInMilliseconds)
 		r.Logger.InfoContext(ctx, "Disconnected from destination MQTT broker")
 	}
 	r.wg.Wait()
@@ -278,7 +272,7 @@ func (r *Relay) conditionalStore(
 	ctx context.Context,
 	envelope *meshtastic.ServiceEnvelope,
 	payload []byte,
-	jsonData *parser.Message,
+	jsonData *mtypes.Message,
 ) error {
 	if r.Config.Store != nil {
 		var portNum string

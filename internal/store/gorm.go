@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mtypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -19,7 +20,7 @@ type gormMessage struct {
 	MessageID string
 	PortNum   string
 	Payload   []byte
-	JSONData  MessageType `gorm:"type:jsonb"`
+	JSONData  *mtypes.Message `gorm:"type:jsonb"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
@@ -78,7 +79,7 @@ func (s *GormStore) Close() error {
 	return sqlDB.Close()
 }
 
-func (s *GormStore) Save(ctx context.Context, messageID, portNum string, payload []byte, msg MessageType) error {
+func (s *GormStore) Save(ctx context.Context, messageID, portNum string, payload []byte, msg *mtypes.Message) error {
 	item := gormMessage{
 		MessageID: messageID,
 		NodeFrom:  msg.GetFrom(),
@@ -90,17 +91,25 @@ func (s *GormStore) Save(ctx context.Context, messageID, portNum string, payload
 	return s.db.WithContext(ctx).Create(&item).Error
 }
 
-func (s *GormStore) Get(ctx context.Context, messageID string) (MessageType, error) {
-	item, err := gorm.G[gormMessage](s.db).Where("MessageID = ?", messageID).First(ctx)
+func (s *GormStore) Get(ctx context.Context, messageID string) (*mtypes.Message, error) {
+	item, err := gorm.G[gormMessage](s.db).Where("message_id = ?", messageID).First(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get message by ID %s: %w", messageID, err)
 	}
 	return item.JSONData, nil
 }
 
-func (s *GormStore) Iterate(ctx context.Context, f func(MessageType) error) error {
+func (s *GormStore) GetPayload(ctx context.Context, messageID string) ([]byte, error) {
+	item, err := gorm.G[gormMessage](s.db).Where("message_id = ?", messageID).First(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get message by ID %s: %w", messageID, err)
+	}
+	return item.Payload, nil
+}
+
+func (s *GormStore) Iterate(ctx context.Context, f func(*mtypes.Message) error) error {
 	var messages []gormMessage
-	if err := s.db.WithContext(ctx).Order("CreatedAt desc").Find(&messages); err != nil {
+	if err := s.db.WithContext(ctx).Order("created_at desc").Find(&messages); err != nil {
 		return fmt.Errorf("failed to iterate messages: %w", err.Error)
 	}
 	for _, msg := range messages {
