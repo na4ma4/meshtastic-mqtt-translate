@@ -9,12 +9,13 @@ import (
 	"strings"
 
 	"github.com/na4ma4/go-slogtool"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mtypes"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/translator"
 	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 	"google.golang.org/protobuf/proto"
 )
 
-type OnParseHandler func(ctx context.Context, envelope *meshtastic.ServiceEnvelope, payload []byte, data *Message) error
+type OnParseHandler func(ctx context.Context, envelope *meshtastic.ServiceEnvelope, payload []byte, data *mtypes.Message) error
 
 type Config struct {
 	OnParseHandler OnParseHandler
@@ -56,7 +57,7 @@ func (p *Parser) ConvertToJSON(
 		}
 	}
 
-	data := &Message{
+	data := &mtypes.Message{
 		Channel:   envelope.GetPacket().GetChannel(),
 		From:      envelope.GetPacket().GetFrom(),
 		HopStart:  envelope.GetPacket().GetHopStart(),

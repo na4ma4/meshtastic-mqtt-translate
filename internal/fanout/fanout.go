@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/cmdconst"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/parser"
 	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 
@@ -17,14 +18,6 @@ import (
 	"github.com/na4ma4/go-contextual"
 	"github.com/na4ma4/go-slogtool"
 	"google.golang.org/protobuf/proto"
-)
-
-const (
-	// defaultQuiesceInMilliseconds - Default quiesce time for MQTT disconnects.
-	defaultQuiesceInMilliseconds = 250
-
-	// defaultErrorChannelBufferSize - Default buffer size for error channel.
-	defaultErrorChannelBufferSize = 10
 )
 
 // Fanout handles the MQTT fanout logic.
@@ -47,7 +40,7 @@ func NewFanout(ctx contextual.Context, config Config, logger *slog.Logger) (*Fan
 		Config:  config,
 		Logger:  logger,
 		Parser:  parser.NewParser(logger),
-		errChan: make(chan error, defaultErrorChannelBufferSize),
+		errChan: make(chan error, cmdconst.DefaultErrorChannelBufferSize),
 	}
 	return f, nil
 }
@@ -90,7 +83,7 @@ func (f *Fanout) connectDest(ctx context.Context) {
 
 	if f.Config.DryRun {
 		f.Logger.InfoContext(ctx, "Dry run enabled, not publishing to destination broker")
-		f.destClient.Disconnect(defaultQuiesceInMilliseconds)
+		f.destClient.Disconnect(cmdconst.DefaultQuiesceInMilliseconds)
 	}
 }
 
@@ -196,11 +189,11 @@ func (f *Fanout) Run(ctx context.Context) <-chan error {
 // Stop stops the relay.
 func (f *Fanout) Stop(ctx context.Context) {
 	if f.sourceClient != nil && f.sourceClient.IsConnected() {
-		f.sourceClient.Disconnect(defaultQuiesceInMilliseconds)
+		f.sourceClient.Disconnect(cmdconst.DefaultQuiesceInMilliseconds)
 		f.Logger.InfoContext(ctx, "Disconnected from source MQTT broker")
 	}
 	if f.destClient != nil && f.destClient.IsConnected() {
-		f.destClient.Disconnect(defaultQuiesceInMilliseconds)
+		f.destClient.Disconnect(cmdconst.DefaultQuiesceInMilliseconds)
 		f.Logger.InfoContext(ctx, "Disconnected from destination MQTT broker")
 	}
 	f.wg.Wait()

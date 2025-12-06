@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"log/slog"
 	"time"
+
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mtypes"
 )
 
 type MessageType interface {
@@ -16,9 +18,10 @@ type MessageType interface {
 
 type Store interface {
 	// Save(messageID, portNum string, payload, jsonData []byte) error
-	Save(ctx context.Context, messageID, portNum string, payload []byte, jsonData MessageType) error
-	Get(ctx context.Context, messageID string) (MessageType, error)
-	Iterate(ctx context.Context, f func(MessageType) error) error
+	Save(ctx context.Context, messageID, portNum string, payload []byte, jsonData *mtypes.Message) error
+	Get(ctx context.Context, messageID string) (*mtypes.Message, error)
+	GetPayload(ctx context.Context, messageID string) ([]byte, error)
+	Iterate(ctx context.Context, f func(*mtypes.Message) error) error
 	Close() error
 }
 
