@@ -1,9 +1,7 @@
 package parser
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -37,13 +35,13 @@ func NewParser(logger *slog.Logger, opts ...OptionFunc) *Parser {
 	}
 }
 
-// ConvertToJSON converts a ServiceEnvelope to JSON.
-func (p *Parser) ConvertToJSON(
+// ConvertToMessage converts a ServiceEnvelope to a Message.
+func (p *Parser) ConvertToMessage(
 	ctx context.Context,
 	topic string,
 	payload []byte,
 	envelope *meshtastic.ServiceEnvelope,
-) ([]byte, error) {
+) (*mtypes.Message, error) {
 	// Create a map representation for better JSON output
 	// data := make(map[string]interface{})
 
@@ -98,15 +96,7 @@ func (p *Parser) ConvertToJSON(
 		}
 	}
 
-	buf := bytes.NewBuffer(nil)
-	enc := json.NewEncoder(buf)
-	// log.Printf("Message: %+v", data)
-	// enc.SetIndent("", "  ")
-	if err := enc.Encode(data); err != nil {
-		return nil, fmt.Errorf("failed to encode JSON: %w", err)
-	}
-
-	return buf.Bytes(), nil
+	return data, nil
 }
 
 // decodePayload decodes the payload based on the port number.

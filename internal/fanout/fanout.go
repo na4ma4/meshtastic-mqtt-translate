@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/cmdconst"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/mtypes"
 	"github.com/na4ma4/meshtastic-mqtt-translate/internal/parser"
+	"github.com/na4ma4/meshtastic-mqtt-translate/internal/translator"
 	"github.com/na4ma4/meshtastic-mqtt-translate/pkg/meshtastic"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -224,6 +226,28 @@ func (f *Fanout) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 	}
 }
 
+func (f *Fanout) addCustomSuffixToTopic(topic string, msg *meshtastic.Data, mtMsg *mtypes.Message) string {
+	switch msg.GetPortnum() { //nolint:exhaustive,gocritic // only needed for these specific so far.
+	case meshtastic.PortNum_TELEMETRY_APP:
+		switch mtMsg.Payload.(type) {
+		case *translator.TelemetryEnvironmentMetrics:
+			return path.Join(topic, "EnvironmentMetrics")
+		case *translator.TelemetryDeviceMetrics:
+			return path.Join(topic, "DeviceMetrics")
+		case *translator.TelemetryAirQualityMetrics:
+			return path.Join(topic, "AirQualityMetrics")
+		case *translator.TelemetryHostMetrics:
+			return path.Join(topic, "HostMetrics")
+		case *meshtastic.Telemetry_LocalStats:
+			return path.Join(topic, "LocalStats")
+		case *meshtastic.Telemetry_PowerMetrics:
+			return path.Join(topic, "PowerMetrics")
+		}
+	}
+
+	return topic
+}
+
 // HandleMessagePayload processes the message payload and returns JSON data and new topic.
 func (f *Fanout) HandleMessagePayload(ctx context.Context, payload []byte, topic string) ([]byte, string) {
 	// Attempt to decode as ServiceEnvelope (the standard Meshtastic MQTT format)
@@ -251,12 +275,25 @@ func (f *Fanout) HandleMessagePayload(ctx context.Context, payload []byte, topic
 		return nil, ""
 	}
 
-	f.Logger.InfoContext(ctx, "<", slog.String("topic", topic), slog.String("portnum", dc.GetPortnum().String()))
 	// Convert to JSON
-	jsonData, err := f.Parser.ConvertToJSON(ctx, topic, payload, &envelope)
-	if err != nil {
-		f.Logger.ErrorContext(ctx, "Failed to convert to JSON", slogtool.ErrorAttr(err))
-		return nil, ""
+	var message *mtypes.Message
+	{
+		var err error
+		message, err = f.Parser.ConvertToMessage(ctx, topic, payload, &envelope)
+		if err != nil {
+			f.Logger.ErrorContext(ctx, "Failed to convert to Message", slogtool.ErrorAttr(err))
+			return nil, ""
+		}
+	}
+
+	var jsonData []byte
+	{
+		var err error
+		jsonData, err = message.ToJSON()
+		if err != nil {
+			f.Logger.ErrorContext(ctx, "Failed to convert to JSON", slogtool.ErrorAttr(err))
+			return nil, ""
+		}
 	}
 
 	newTopic := path.Join(
@@ -264,6 +301,8 @@ func (f *Fanout) HandleMessagePayload(ctx context.Context, payload []byte, topic
 		strconv.FormatUint(uint64(envelope.GetPacket().GetFrom()), 10),
 		dc.GetPortnum().String(),
 	)
+
+	newTopic = f.addCustomSuffixToTopic(newTopic, dc, message)
 
 	// log.Printf(">: %s", newTopic)
 	f.Logger.DebugContext(ctx, "Relaying message",
