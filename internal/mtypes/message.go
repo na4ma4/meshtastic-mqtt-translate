@@ -48,11 +48,10 @@ func (m *Message) Scan(value interface{}) error {
 	return json.Unmarshal(b, m)
 }
 
+// ToJSON converts the Message to JSON bytes.
 func (m *Message) ToJSON() ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	enc := json.NewEncoder(buf)
-	// log.Printf("Message: %+v", data)
-	// enc.SetIndent("", "  ")
 	if err := enc.Encode(m); err != nil {
 		return nil, fmt.Errorf("failed to encode JSON: %w", err)
 	}

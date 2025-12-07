@@ -226,8 +226,8 @@ func (f *Fanout) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 	}
 }
 
-func (f *Fanout) addCustomSuffixToTopic(topic string, msg *meshtastic.Data, mtMsg *mtypes.Message) string {
-	switch msg.GetPortnum() { //nolint:exhaustive,gocritic // only needed for these specific so far.
+func (f *Fanout) addCustomSuffixToTopic(topic string, dc *meshtastic.Data, mtMsg *mtypes.Message) string {
+	switch dc.GetPortnum() { //nolint:exhaustive,gocritic // only needed for these specific so far.
 	case meshtastic.PortNum_TELEMETRY_APP:
 		switch mtMsg.Payload.(type) {
 		case *translator.TelemetryEnvironmentMetrics:
@@ -238,9 +238,9 @@ func (f *Fanout) addCustomSuffixToTopic(topic string, msg *meshtastic.Data, mtMs
 			return path.Join(topic, "AirQualityMetrics")
 		case *translator.TelemetryHostMetrics:
 			return path.Join(topic, "HostMetrics")
-		case *meshtastic.Telemetry_LocalStats:
+		case *translator.TelemetryLocalStats:
 			return path.Join(topic, "LocalStats")
-		case *meshtastic.Telemetry_PowerMetrics:
+		case *translator.TelemetryPowerMetrics:
 			return path.Join(topic, "PowerMetrics")
 		}
 	}
@@ -275,6 +275,11 @@ func (f *Fanout) HandleMessagePayload(ctx context.Context, payload []byte, topic
 		return nil, ""
 	}
 
+	// Log incoming message with topic and portnum for observability
+	f.Logger.DebugContext(ctx, "Processing incoming message",
+		slog.String("topic", topic),
+		slog.String("portnum", dc.GetPortnum().String()),
+	)
 	// Convert to JSON
 	var message *mtypes.Message
 	{
