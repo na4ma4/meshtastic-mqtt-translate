@@ -216,7 +216,7 @@ func (r *Relay) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 			r.Logger.Debug("Dry run enabled, not publishing message", "topic", topic)
 			return
 		}
-		if token := r.destClient.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
+		if token := r.destClient.Publish(topic, 0, r.Config.RetainFlag, payload); token.Wait() && token.Error() != nil {
 			r.Logger.Error("Failed to publish to destination", slogtool.ErrorAttr(token.Error()))
 			r.errChan <- token.Error()
 		} else {

@@ -18,6 +18,7 @@ type Config struct {
 	DryRun          bool
 	Keepalive       time.Duration
 	TargetBaseTopic string
+	RetainFlag      bool
 }
 
 func (c *Config) CopyFromRelayConfig(src relay.Config) {

@@ -217,7 +217,7 @@ func (f *Fanout) messageHandler(_ mqtt.Client, msg mqtt.Message) {
 			f.Logger.Debug("Dry run enabled, not publishing message", "topic", topic)
 			return
 		}
-		if token := f.destClient.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
+		if token := f.destClient.Publish(topic, 0, f.Config.RetainFlag, payload); token.Wait() && token.Error() != nil {
 			f.Logger.Error("Failed to publish to destination", slogtool.ErrorAttr(token.Error()))
 			f.errChan <- token.Error()
 		} else {

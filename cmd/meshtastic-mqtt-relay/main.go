@@ -112,13 +112,14 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 	)
 
 	config := relay.Config{
-		Broker:    viper.GetString("broker.address"),
-		ClientID:  viper.GetString("broker.clientid"),
-		Username:  viper.GetString("broker.username"),
-		Password:  viper.GetString("broker.password"),
-		Topic:     viper.GetString("broker.topic"),
-		DryRun:    viper.GetBool("dry-run"),
-		Keepalive: viper.GetDuration("broker.keepalive"),
+		Broker:     viper.GetString("broker.address"),
+		ClientID:   viper.GetString("broker.clientid"),
+		Username:   viper.GetString("broker.username"),
+		Password:   viper.GetString("broker.password"),
+		Topic:      viper.GetString("broker.topic"),
+		DryRun:     viper.GetBool("dry-run"),
+		Keepalive:  viper.GetDuration("broker.keepalive"),
+		RetainFlag: viper.GetBool("features.relay-set-retain-flag"),
 	}
 
 	//nolint:nestif // TODO refactor for simplicity
@@ -148,6 +149,7 @@ func mainCmd(_ *cobra.Command, _ []string) error {
 		}
 		foConfig.CopyFromRelayConfig(config)
 		foConfig.ClientID += "-fanout"
+		foConfig.RetainFlag = viper.GetBool("features.fanout-set-retain-flag")
 
 		var err error
 		foClient, err = fanout.NewFanout(ctx, foConfig, logger)

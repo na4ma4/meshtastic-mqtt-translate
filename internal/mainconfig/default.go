@@ -35,6 +35,12 @@ func ConfigInit() {
 	viper.SetDefault("features.fanout-relay", false)
 	_ = viper.BindEnv("features.fanout-relay", "FEATURE_FANOUT_RELAY")
 
+	viper.SetDefault("features.relay-set-retain-flag", false)
+	_ = viper.BindEnv("features.relay-set-retain-flag", "FEATURE_RELAY_SET_RETAIN_FLAG")
+
+	viper.SetDefault("features.fanout-set-retain-flag", false)
+	_ = viper.BindEnv("features.fanout-set-retain-flag", "FEATURE_FANOUT_SET_RETAIN_FLAG")
+
 	viper.SetDefault("features.message-store", false)
 	_ = viper.BindEnv("features.message-store", "FEATURE_MESSAGE_STORE")
 
