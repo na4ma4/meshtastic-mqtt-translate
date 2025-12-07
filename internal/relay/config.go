@@ -8,12 +8,13 @@ import (
 
 // Config holds the relay configuration.
 type Config struct {
-	Broker    string
-	ClientID  string
-	Topic     string
-	Username  string
-	Password  string
-	Store     store.Store
-	DryRun    bool
-	Keepalive time.Duration
+	Broker     string
+	ClientID   string
+	Topic      string
+	Username   string
+	Password   string
+	Store      store.Store
+	DryRun     bool
+	Keepalive  time.Duration
+	RetainFlag bool
 }
