@@ -251,10 +251,24 @@ func (r *Relay) HandleMessagePayload(ctx context.Context, payload []byte, topic 
 	}
 
 	// Convert to JSON
-	jsonData, err := r.Parser.ConvertToJSON(ctx, topic, payload, &envelope)
-	if err != nil {
-		r.Logger.ErrorContext(ctx, "Failed to convert to JSON", slogtool.ErrorAttr(err))
-		return nil, ""
+	var message *mtypes.Message
+	{
+		var err error
+		message, err = r.Parser.ConvertToMessage(ctx, topic, payload, &envelope)
+		if err != nil {
+			r.Logger.ErrorContext(ctx, "Failed to convert to Message", slogtool.ErrorAttr(err))
+			return nil, ""
+		}
+	}
+
+	var jsonData []byte
+	{
+		var err error
+		jsonData, err = message.ToJSON()
+		if err != nil {
+			r.Logger.ErrorContext(ctx, "Failed to convert to JSON", slogtool.ErrorAttr(err))
+			return nil, ""
+		}
 	}
 
 	newTopic := strings.Replace(topic, "/e/", "/json/", 1)
