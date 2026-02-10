@@ -244,7 +244,10 @@ func (r *Relay) HandleMessagePayload(ctx context.Context, payload []byte, topic 
 		r.Logger.InfoContext(ctx, "<", slog.String("topic", topic))
 	} else {
 		if dc := envelope.GetPacket().GetDecoded(); dc != nil {
-			r.Logger.InfoContext(ctx, "<", slog.String("topic", topic), slog.String("portnum", dc.GetPortnum().String()))
+			r.Logger.InfoContext(ctx, "<",
+				slog.String("topic", topic),
+				slog.String("portnum", dc.GetPortnum().String()),
+			)
 		} else {
 			r.Logger.InfoContext(ctx, "< [encrypted]", slog.String("topic", topic))
 		}
