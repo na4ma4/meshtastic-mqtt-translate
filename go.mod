@@ -1,6 +1,6 @@
 module github.com/na4ma4/meshtastic-mqtt-translate
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/dosquad/go-cliversion v0.3.0
@@ -25,7 +25,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.33 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
 )
 
 require (
@@ -33,7 +32,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/na4ma4/go-slogtool v0.1.3
+	github.com/na4ma4/go-slogtool v1.0.0
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
